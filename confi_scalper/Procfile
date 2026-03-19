@@ -1,0 +1,1 @@
+worker: python demo.py --symbol "GOLD(XAUT)USDT" --balance 1000 --sl 0.25 --tp 0.5 --confidence 70 --max-losses 20
