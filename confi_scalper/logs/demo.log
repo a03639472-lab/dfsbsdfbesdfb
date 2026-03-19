@@ -1,0 +1,375 @@
+2026-03-19 09:26:37,590 INFO | ✅ Подключено к MEXC REST! BTCUSDT @ 69884.6250
+2026-03-19 09:34:22,146 INFO | ✅ Подключено к MEXC REST! SOLUSDT @ 89.2150
+2026-03-19 09:45:45,859 WARNING WS blocked: Not Subscribed successfully! [spot@public.depth.v3.api@BTCUSDT@20,spot@public.deals.v3.api@BTCUSDT].  Reason： Blocked! 
+2026-03-19 09:46:11,487 WARNING REST poll error: 
+2026-03-19 09:48:48,448 WARNING WS blocked: Not Subscribed successfully! [spot@public.depth.v3.api@BTCUSDT@20,spot@public.deals.v3.api@BTCUSDT].  Reason： Blocked! 
+2026-03-19 09:49:56,390 WARNING REST poll error: 
+2026-03-19 09:54:32,434 WARNING WS geo-blocked: Not Subscribed successfully! [spot@public.depth.v3.api@BTCUSDT@20,spot@public.deals.v3.api@BTCUSDT].  Reason： Blocked! 
+2026-03-19 09:57:40,917 WARNING WS geo-blocked: Not Subscribed successfully! [spot@public.depth.v3.api@BTCUSDT@20,spot@public.deals.v3.api@BTCUSDT].  Reason： Blocked! 
+2026-03-19 10:01:52,375 WARNING WS geo-blocked: Not Subscribed successfully! [spot@public.depth.v3.api@BTCUSDT@20,spot@public.deals.v3.api@BTCUSDT].  Reason： Blocked! 
+2026-03-19 10:10:05,584 WARNING WS geo-blocked: Not Subscribed successfully! [spot@public.depth.v3.api@BTCUSDT@20,spot@public.deals.v3.api@BTCUSDT].  Reason： Blocked! 
+2026-03-19 10:37:26,947 WARNING WS geo-blocked: Not Subscribed successfully! [spot@public.depth.v3.api@BTCUSDT@20,spot@public.deals.v3.api@BTCUSDT].  Reason： Blocked! 
+2026-03-19 10:48:05,121 WARNING WS geo-blocked: Not Subscribed successfully! [spot@public.depth.v3.api@BTCUSDT@20,spot@public.deals.v3.api@BTCUSDT].  Reason： Blocked! 
+2026-03-19 10:53:43,825 WARNING WS geo-blocked: Not Subscribed successfully! [spot@public.depth.v3.api@BTCUSDT@20,spot@public.deals.v3.api@BTCUSDT].  Reason： Blocked! 
+2026-03-19 11:00:12,707 WARNING WS geo-blocked: Not Subscribed successfully! [spot@public.depth.v3.api@BTCUSDT@20,spot@public.deals.v3.api@BTCUSDT].  Reason： Blocked! 
+2026-03-19 11:00:12,978 WARNING REST worker: запрос 1
+2026-03-19 11:00:13,440 WARNING REST worker: запрос 1 OK, bids=20
+2026-03-19 11:00:15,441 WARNING REST worker: запрос 2
+2026-03-19 11:00:15,814 WARNING REST worker: запрос 2 OK, bids=20
+2026-03-19 11:02:22,956 WARNING WS geo-blocked: Not Subscribed successfully! [spot@public.depth.v3.api@BTCUSDT@20,spot@public.deals.v3.api@BTCUSDT].  Reason： Blocked! 
+2026-03-19 11:02:23,232 WARNING REST worker: запрос 1
+2026-03-19 11:02:23,672 WARNING REST worker: запрос 1 OK, bids=20
+2026-03-19 11:02:23,862 WARNING REST queue: получено ok
+2026-03-19 11:02:23,863 WARNING REST: вызов analyzer.process
+2026-03-19 11:02:23,863 WARNING REST: process вернул True
+2026-03-19 11:02:23,863 WARNING REST: вызов _on_book_update
+2026-03-19 11:02:23,863 WARNING REST: _on_book_update завершён
+2026-03-19 11:02:25,672 WARNING REST worker: запрос 2
+2026-03-19 11:02:26,045 WARNING REST worker: запрос 2 OK, bids=20
+2026-03-19 11:02:26,168 WARNING REST queue: получено ok
+2026-03-19 11:02:26,168 WARNING REST: вызов analyzer.process
+2026-03-19 11:02:26,169 WARNING REST: process вернул True
+2026-03-19 11:02:26,169 WARNING REST: вызов _on_book_update
+2026-03-19 11:02:26,169 WARNING REST: _on_book_update завершён
+2026-03-19 11:02:28,046 WARNING REST worker: запрос 3
+2026-03-19 11:02:28,400 WARNING REST worker: запрос 3 OK, bids=20
+2026-03-19 11:02:28,496 WARNING REST queue: получено ok
+2026-03-19 11:02:28,496 WARNING REST: вызов analyzer.process
+2026-03-19 11:02:28,497 WARNING REST: process вернул False
+2026-03-19 11:02:30,401 WARNING REST worker: запрос 4
+2026-03-19 11:02:30,772 WARNING REST worker: запрос 4 OK, bids=20
+2026-03-19 11:02:30,793 WARNING REST queue: получено ok
+2026-03-19 11:02:30,793 WARNING REST: вызов analyzer.process
+2026-03-19 11:02:30,794 WARNING REST: process вернул False
+2026-03-19 11:02:32,774 WARNING REST worker: запрос 5
+2026-03-19 11:02:33,142 WARNING REST worker: запрос 5 OK, bids=20
+2026-03-19 11:02:33,168 WARNING REST queue: получено ok
+2026-03-19 11:02:33,168 WARNING REST: вызов analyzer.process
+2026-03-19 11:02:33,169 WARNING REST: process вернул False
+2026-03-19 11:02:35,153 WARNING REST worker: запрос 6
+2026-03-19 11:02:35,498 WARNING REST worker: запрос 6 OK, bids=20
+2026-03-19 11:02:35,693 WARNING REST queue: получено ok
+2026-03-19 11:02:35,693 WARNING REST: вызов analyzer.process
+2026-03-19 11:02:35,695 WARNING REST: process вернул False
+2026-03-19 11:02:37,499 WARNING REST worker: запрос 7
+2026-03-19 11:02:37,865 WARNING REST worker: запрос 7 OK, bids=20
+2026-03-19 11:02:38,041 WARNING REST queue: получено ok
+2026-03-19 11:02:38,042 WARNING REST: вызов analyzer.process
+2026-03-19 11:02:38,043 WARNING REST: process вернул False
+2026-03-19 11:02:39,866 WARNING REST worker: запрос 8
+2026-03-19 11:02:40,224 WARNING REST worker: запрос 8 OK, bids=20
+2026-03-19 11:02:40,325 WARNING REST queue: получено ok
+2026-03-19 11:02:40,325 WARNING REST: вызов analyzer.process
+2026-03-19 11:02:40,326 WARNING REST: process вернул False
+2026-03-19 11:02:42,225 WARNING REST worker: запрос 9
+2026-03-19 11:02:42,582 WARNING REST worker: запрос 9 OK, bids=20
+2026-03-19 11:02:42,676 WARNING REST queue: получено ok
+2026-03-19 11:02:42,677 WARNING REST: вызов analyzer.process
+2026-03-19 11:02:42,678 WARNING REST: process вернул False
+2026-03-19 11:02:44,583 WARNING REST worker: запрос 10
+2026-03-19 11:02:44,993 WARNING REST worker: запрос 10 OK, bids=20
+2026-03-19 11:02:45,071 WARNING REST queue: получено ok
+2026-03-19 11:02:45,072 WARNING REST: вызов analyzer.process
+2026-03-19 11:02:45,073 WARNING REST: process вернул False
+2026-03-19 11:02:46,994 WARNING REST worker: запрос 11
+2026-03-19 11:02:47,366 WARNING REST worker: запрос 11 OK, bids=20
+2026-03-19 11:02:47,421 WARNING REST queue: получено ok
+2026-03-19 11:02:47,421 WARNING REST: вызов analyzer.process
+2026-03-19 11:02:47,422 WARNING REST: process вернул False
+2026-03-19 11:02:49,367 WARNING REST worker: запрос 12
+2026-03-19 11:02:49,719 WARNING REST worker: запрос 12 OK, bids=20
+2026-03-19 11:02:49,874 WARNING REST queue: получено ok
+2026-03-19 11:02:49,874 WARNING REST: вызов analyzer.process
+2026-03-19 11:02:49,875 WARNING REST: process вернул False
+2026-03-19 11:02:51,720 WARNING REST worker: запрос 13
+2026-03-19 11:02:52,093 WARNING REST worker: запрос 13 OK, bids=20
+2026-03-19 11:02:52,187 WARNING REST queue: получено ok
+2026-03-19 11:02:52,187 WARNING REST: вызов analyzer.process
+2026-03-19 11:02:52,188 WARNING REST: process вернул False
+2026-03-19 11:02:54,094 WARNING REST worker: запрос 14
+2026-03-19 11:02:54,475 WARNING REST worker: запрос 14 OK, bids=20
+2026-03-19 11:02:54,520 WARNING REST queue: получено ok
+2026-03-19 11:02:54,521 WARNING REST: вызов analyzer.process
+2026-03-19 11:02:54,521 WARNING REST: process вернул False
+2026-03-19 11:02:56,476 WARNING REST worker: запрос 15
+2026-03-19 11:02:56,838 WARNING REST worker: запрос 15 OK, bids=20
+2026-03-19 11:02:56,872 WARNING REST queue: получено ok
+2026-03-19 11:02:56,872 WARNING REST: вызов analyzer.process
+2026-03-19 11:02:56,873 WARNING REST: process вернул False
+2026-03-19 11:02:58,839 WARNING REST worker: запрос 16
+2026-03-19 11:02:59,208 WARNING REST worker: запрос 16 OK, bids=20
+2026-03-19 11:02:59,400 WARNING REST queue: получено ok
+2026-03-19 11:02:59,401 WARNING REST: вызов analyzer.process
+2026-03-19 11:02:59,401 WARNING REST: process вернул False
+2026-03-19 11:03:01,208 WARNING REST worker: запрос 17
+2026-03-19 11:03:01,574 WARNING REST worker: запрос 17 OK, bids=20
+2026-03-19 11:03:01,752 WARNING REST queue: получено ok
+2026-03-19 11:03:01,752 WARNING REST: вызов analyzer.process
+2026-03-19 11:03:01,753 WARNING REST: process вернул False
+2026-03-19 11:03:03,575 WARNING REST worker: запрос 18
+2026-03-19 11:03:03,936 WARNING REST worker: запрос 18 OK, bids=20
+2026-03-19 11:03:04,097 WARNING REST queue: получено ok
+2026-03-19 11:03:04,097 WARNING REST: вызов analyzer.process
+2026-03-19 11:03:04,098 WARNING REST: process вернул False
+2026-03-19 11:03:05,937 WARNING REST worker: запрос 19
+2026-03-19 11:03:06,424 WARNING REST worker: запрос 19 OK, bids=20
+2026-03-19 11:03:06,585 WARNING REST queue: получено ok
+2026-03-19 11:03:06,585 WARNING REST: вызов analyzer.process
+2026-03-19 11:03:06,586 WARNING REST: process вернул False
+2026-03-19 11:03:08,425 WARNING REST worker: запрос 20
+2026-03-19 11:03:08,772 WARNING REST worker: запрос 20 OK, bids=20
+2026-03-19 11:03:08,933 WARNING REST queue: получено ok
+2026-03-19 11:03:08,934 WARNING REST: вызов analyzer.process
+2026-03-19 11:03:08,935 WARNING REST: process вернул False
+2026-03-19 11:03:10,773 WARNING REST worker: запрос 21
+2026-03-19 11:03:11,210 WARNING REST worker: запрос 21 OK, bids=20
+2026-03-19 11:03:11,251 WARNING REST queue: получено ok
+2026-03-19 11:03:11,251 WARNING REST: вызов analyzer.process
+2026-03-19 11:03:11,252 WARNING REST: process вернул False
+2026-03-19 11:03:13,211 WARNING REST worker: запрос 22
+2026-03-19 11:03:13,567 WARNING REST worker: запрос 22 OK, bids=20
+2026-03-19 11:03:13,761 WARNING REST queue: получено ok
+2026-03-19 11:03:13,761 WARNING REST: вызов analyzer.process
+2026-03-19 11:03:13,761 WARNING REST: process вернул False
+2026-03-19 11:03:15,568 WARNING REST worker: запрос 23
+2026-03-19 11:03:15,981 WARNING REST worker: запрос 23 OK, bids=20
+2026-03-19 11:03:16,017 WARNING REST queue: получено ok
+2026-03-19 11:03:16,017 WARNING REST: вызов analyzer.process
+2026-03-19 11:03:16,018 WARNING REST: process вернул False
+2026-03-19 11:03:17,982 WARNING REST worker: запрос 24
+2026-03-19 11:03:18,356 WARNING REST worker: запрос 24 OK, bids=20
+2026-03-19 11:03:18,497 WARNING REST queue: получено ok
+2026-03-19 11:03:18,498 WARNING REST: вызов analyzer.process
+2026-03-19 11:03:18,499 WARNING REST: process вернул False
+2026-03-19 11:03:20,357 WARNING REST worker: запрос 25
+2026-03-19 11:03:20,734 WARNING REST worker: запрос 25 OK, bids=20
+2026-03-19 11:03:20,748 WARNING REST queue: получено ok
+2026-03-19 11:03:20,749 WARNING REST: вызов analyzer.process
+2026-03-19 11:03:20,750 WARNING REST: process вернул False
+2026-03-19 11:03:22,734 WARNING REST worker: запрос 26
+2026-03-19 11:03:23,117 WARNING REST worker: запрос 26 OK, bids=20
+2026-03-19 11:03:23,229 WARNING REST queue: получено ok
+2026-03-19 11:03:23,229 WARNING REST: вызов analyzer.process
+2026-03-19 11:03:23,231 WARNING REST: process вернул False
+2026-03-19 11:03:25,118 WARNING REST worker: запрос 27
+2026-03-19 11:03:25,481 WARNING REST worker: запрос 27 OK, bids=20
+2026-03-19 11:03:25,687 WARNING REST queue: получено ok
+2026-03-19 11:03:25,687 WARNING REST: вызов analyzer.process
+2026-03-19 11:03:25,688 WARNING REST: process вернул False
+2026-03-19 11:03:27,482 WARNING REST worker: запрос 28
+2026-03-19 11:03:27,863 WARNING REST worker: запрос 28 OK, bids=20
+2026-03-19 11:03:27,964 WARNING REST queue: получено ok
+2026-03-19 11:03:27,964 WARNING REST: вызов analyzer.process
+2026-03-19 11:03:27,966 WARNING REST: process вернул False
+2026-03-19 11:03:29,865 WARNING REST worker: запрос 29
+2026-03-19 11:03:30,214 WARNING REST worker: запрос 29 OK, bids=20
+2026-03-19 11:03:30,246 WARNING REST queue: получено ok
+2026-03-19 11:03:30,246 WARNING REST: вызов analyzer.process
+2026-03-19 11:03:30,247 WARNING REST: process вернул False
+2026-03-19 11:03:32,215 WARNING REST worker: запрос 30
+2026-03-19 11:03:32,586 WARNING REST worker: запрос 30 OK, bids=20
+2026-03-19 11:03:32,747 WARNING REST queue: получено ok
+2026-03-19 11:03:32,747 WARNING REST: вызов analyzer.process
+2026-03-19 11:03:32,749 WARNING REST: process вернул False
+2026-03-19 11:03:34,587 WARNING REST worker: запрос 31
+2026-03-19 11:03:34,943 WARNING REST worker: запрос 31 OK, bids=20
+2026-03-19 11:03:35,024 WARNING REST queue: получено ok
+2026-03-19 11:03:35,025 WARNING REST: вызов analyzer.process
+2026-03-19 11:03:35,027 WARNING REST: process вернул False
+2026-03-19 11:03:36,944 WARNING REST worker: запрос 32
+2026-03-19 11:03:37,289 WARNING REST worker: запрос 32 OK, bids=20
+2026-03-19 11:03:37,310 WARNING REST queue: получено ok
+2026-03-19 11:03:37,310 WARNING REST: вызов analyzer.process
+2026-03-19 11:03:37,313 WARNING REST: process вернул False
+2026-03-19 11:03:39,290 WARNING REST worker: запрос 33
+2026-03-19 11:03:39,661 WARNING REST worker: запрос 33 OK, bids=20
+2026-03-19 11:03:39,812 WARNING REST queue: получено ok
+2026-03-19 11:03:39,812 WARNING REST: вызов analyzer.process
+2026-03-19 11:03:39,814 WARNING REST: process вернул False
+2026-03-19 11:03:41,662 WARNING REST worker: запрос 34
+2026-03-19 11:03:42,022 WARNING REST worker: запрос 34 OK, bids=20
+2026-03-19 11:03:42,093 WARNING REST queue: получено ok
+2026-03-19 11:03:42,093 WARNING REST: вызов analyzer.process
+2026-03-19 11:03:42,095 WARNING REST: process вернул False
+2026-03-19 11:03:44,023 WARNING REST worker: запрос 35
+2026-03-19 11:03:44,366 WARNING REST worker: запрос 35 OK, bids=20
+2026-03-19 11:03:44,389 WARNING REST queue: получено ok
+2026-03-19 11:03:44,389 WARNING REST: вызов analyzer.process
+2026-03-19 11:03:44,390 WARNING REST: process вернул False
+2026-03-19 11:03:46,367 WARNING REST worker: запрос 36
+2026-03-19 11:03:46,719 WARNING REST worker: запрос 36 OK, bids=20
+2026-03-19 11:03:46,859 WARNING REST queue: получено ok
+2026-03-19 11:03:46,860 WARNING REST: вызов analyzer.process
+2026-03-19 11:03:46,861 WARNING REST: process вернул False
+2026-03-19 11:03:48,720 WARNING REST worker: запрос 37
+2026-03-19 11:03:49,114 WARNING REST worker: запрос 37 OK, bids=20
+2026-03-19 11:03:49,138 WARNING REST queue: получено ok
+2026-03-19 11:03:49,138 WARNING REST: вызов analyzer.process
+2026-03-19 11:03:49,139 WARNING REST: process вернул False
+2026-03-19 11:03:51,115 WARNING REST worker: запрос 38
+2026-03-19 11:03:51,502 WARNING REST worker: запрос 38 OK, bids=20
+2026-03-19 11:03:51,622 WARNING REST queue: получено ok
+2026-03-19 11:03:51,622 WARNING REST: вызов analyzer.process
+2026-03-19 11:03:51,623 WARNING REST: process вернул False
+2026-03-19 11:03:53,503 WARNING REST worker: запрос 39
+2026-03-19 11:03:53,862 WARNING REST worker: запрос 39 OK, bids=20
+2026-03-19 11:03:53,890 WARNING REST queue: получено ok
+2026-03-19 11:03:53,891 WARNING REST: вызов analyzer.process
+2026-03-19 11:03:53,892 WARNING REST: process вернул False
+2026-03-19 11:03:55,863 WARNING REST worker: запрос 40
+2026-03-19 11:03:56,223 WARNING REST worker: запрос 40 OK, bids=20
+2026-03-19 11:03:56,386 WARNING REST queue: получено ok
+2026-03-19 11:03:56,386 WARNING REST: вызов analyzer.process
+2026-03-19 11:03:56,387 WARNING REST: process вернул False
+2026-03-19 11:03:58,224 WARNING REST worker: запрос 41
+2026-03-19 11:03:58,635 WARNING REST worker: запрос 41 OK, bids=20
+2026-03-19 11:03:58,640 WARNING REST queue: получено ok
+2026-03-19 11:03:58,640 WARNING REST: вызов analyzer.process
+2026-03-19 11:03:58,642 WARNING REST: process вернул False
+2026-03-19 11:04:00,637 WARNING REST worker: запрос 42
+2026-03-19 11:04:00,997 WARNING REST worker: запрос 42 OK, bids=20
+2026-03-19 11:04:01,125 WARNING REST queue: получено ok
+2026-03-19 11:04:01,126 WARNING REST: вызов analyzer.process
+2026-03-19 11:04:01,127 WARNING REST: process вернул False
+2026-03-19 11:04:02,998 WARNING REST worker: запрос 43
+2026-03-19 11:04:03,359 WARNING REST worker: запрос 43 OK, bids=20
+2026-03-19 11:04:03,404 WARNING REST queue: получено ok
+2026-03-19 11:04:03,405 WARNING REST: вызов analyzer.process
+2026-03-19 11:04:03,407 WARNING REST: process вернул False
+2026-03-19 11:04:05,360 WARNING REST worker: запрос 44
+2026-03-19 11:04:05,724 WARNING REST worker: запрос 44 OK, bids=20
+2026-03-19 11:04:05,886 WARNING REST queue: получено ok
+2026-03-19 11:04:05,886 WARNING REST: вызов analyzer.process
+2026-03-19 11:04:05,889 WARNING REST: process вернул False
+2026-03-19 11:04:07,725 WARNING REST worker: запрос 45
+2026-03-19 11:04:08,075 WARNING REST worker: запрос 45 OK, bids=20
+2026-03-19 11:04:08,166 WARNING REST queue: получено ok
+2026-03-19 11:04:08,166 WARNING REST: вызов analyzer.process
+2026-03-19 11:04:08,167 WARNING REST: process вернул False
+2026-03-19 11:04:10,076 WARNING REST worker: запрос 46
+2026-03-19 11:04:10,455 WARNING REST worker: запрос 46 OK, bids=20
+2026-03-19 11:04:10,648 WARNING REST queue: получено ok
+2026-03-19 11:04:10,648 WARNING REST: вызов analyzer.process
+2026-03-19 11:04:10,650 WARNING REST: process вернул False
+2026-03-19 11:04:12,455 WARNING REST worker: запрос 47
+2026-03-19 11:04:12,815 WARNING REST worker: запрос 47 OK, bids=20
+2026-03-19 11:04:12,920 WARNING REST queue: получено ok
+2026-03-19 11:04:12,921 WARNING REST: вызов analyzer.process
+2026-03-19 11:04:12,923 WARNING REST: process вернул False
+2026-03-19 11:11:05,752 WARNING WS geo-blocked: Not Subscribed successfully! [spot@public.depth.v3.api@BTCUSDT@20,spot@public.deals.v3.api@BTCUSDT].  Reason： Blocked! 
+2026-03-19 11:18:18,801 WARNING WS geo-blocked: Not Subscribed successfully! [spot@public.depth.v3.api@BTCUSDT@20,spot@public.deals.v3.api@BTCUSDT].  Reason： Blocked! 
+2026-03-19 11:49:59,344 WARNING WS geo-blocked: Not Subscribed successfully! [spot@public.depth.v3.api@BTCUSDT@20,spot@public.deals.v3.api@BTCUSDT].  Reason： Blocked! 
+2026-03-19 12:07:31,065 WARNING WS geo-blocked: Not Subscribed successfully! [spot@public.depth.v3.api@BTCUSDT@20,spot@public.deals.v3.api@BTCUSDT].  Reason： Blocked! 
+2026-03-19 12:16:23,582 WARNING WS geo-blocked: Not Subscribed successfully! [spot@public.depth.v3.api@BTCUSDT@20,spot@public.deals.v3.api@BTCUSDT].  Reason： Blocked! 
+2026-03-19 12:27:18,474 WARNING REST poll error: <urlopen error [Errno 11001] getaddrinfo failed>
+2026-03-19 12:54:53,412 WARNING WS geo-blocked: Not Subscribed successfully! [spot@public.depth.v3.api@XAUTUSDT@20,spot@public.deals.v3.api@XAUTUSDT].  Reason： Blocked! 
+2026-03-19 12:54:54,296 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:54:56,531 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:54:59,870 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:55:01,318 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:55:03,661 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:55:06,003 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:55:08,484 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:55:10,755 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:55:13,038 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:55:15,613 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:55:17,896 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:55:20,177 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:55:22,661 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:55:24,946 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:55:27,425 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:55:29,676 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:55:32,239 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:55:34,523 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:55:36,790 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:55:39,260 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:55:41,535 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:55:44,008 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:55:46,538 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:55:48,804 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:55:51,102 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:55:53,568 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:55:55,838 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:55:58,319 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:56:00,651 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:56:02,973 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:56:05,252 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:56:07,729 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:56:10,014 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:56:12,501 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:56:14,815 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:56:17,097 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:56:19,570 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:56:21,872 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:56:24,354 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:56:26,660 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:56:29,127 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:56:31,406 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:56:33,704 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:56:36,194 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:56:38,458 WARNING REST poll error: HTTP Error 400: Bad Request
+2026-03-19 12:57:13,287 WARNING WS geo-blocked: Not Subscribed successfully! [spot@public.deals.v3.api@GOLD(XAUT)USDT,spot@public.depth.v3.api@GOLD(XAUT)USDT@20].  Reason： Blocked! 
+2026-03-19 12:57:56,203 WARNING WS geo-blocked: Not Subscribed successfully! [spot@public.deals.v3.api@GOLD(XAUT)USDT,spot@public.depth.v3.api@GOLD(XAUT)USDT@20].  Reason： Blocked! 
+2026-03-19 12:59:04,531 WARNING WS geo-blocked: Not Subscribed successfully! [spot@public.deals.v3.api@GOLD(XAUT)USDT,spot@public.depth.v3.api@GOLD(XAUT)USDT@20].  Reason： Blocked! 
+2026-03-19 14:23:19,129 WARNING WS geo-blocked: Not Subscribed successfully! [spot@public.deals.v3.api@GOLD(XAUT)USDT,spot@public.depth.v3.api@GOLD(XAUT)USDT@20].  Reason： Blocked! 
+2026-03-19 15:32:02,173 WARNING WS geo-blocked: Not Subscribed successfully! [spot@public.depth.v3.api@BTCUSDT@20,spot@public.deals.v3.api@BTCUSDT].  Reason： Blocked! 
+2026-03-19 15:54:47,200 WARNING WS geo-blocked: Not Subscribed successfully! [spot@public.depth.v3.api@BTCUSDT@20,spot@public.deals.v3.api@BTCUSDT].  Reason： Blocked! 
+2026-03-19 16:06:59,997 WARNING WS geo-blocked: Not Subscribed successfully! [spot@public.depth.v3.api@BTCUSDT@20,spot@public.deals.v3.api@BTCUSDT].  Reason： Blocked! 
+2026-03-19 16:17:40,121 WARNING WS geo-blocked: Not Subscribed successfully! [spot@public.deals.v3.api@GOLD(XAUT)USDT,spot@public.depth.v3.api@GOLD(XAUT)USDT@20].  Reason： Blocked! 
+2026-03-19 16:18:10,523 WARNING DeepSeek error: HTTP Error 402: Payment Required — пропускаем фильтр
+2026-03-19 16:19:55,181 WARNING DeepSeek error: HTTP Error 402: Payment Required — пропускаем фильтр
+2026-03-19 16:20:47,165 WARNING DeepSeek error: HTTP Error 402: Payment Required — пропускаем фильтр
+2026-03-19 16:24:29,524 WARNING DeepSeek error: HTTP Error 402: Payment Required — пропускаем фильтр
+2026-03-19 16:25:02,336 WARNING DeepSeek error: HTTP Error 402: Payment Required — пропускаем фильтр
+2026-03-19 16:26:06,230 WARNING DeepSeek error: HTTP Error 402: Payment Required — пропускаем фильтр
+2026-03-19 16:27:55,663 WARNING DeepSeek error: HTTP Error 402: Payment Required — пропускаем фильтр
+2026-03-19 16:31:57,877 WARNING DeepSeek error: HTTP Error 402: Payment Required — пропускаем фильтр
+2026-03-19 16:32:40,666 WARNING DeepSeek error: HTTP Error 402: Payment Required — пропускаем фильтр
+2026-03-19 16:34:15,684 WARNING DeepSeek error: HTTP Error 402: Payment Required — пропускаем фильтр
+2026-03-19 16:35:14,975 WARNING DeepSeek error: HTTP Error 402: Payment Required — пропускаем фильтр
+2026-03-19 16:36:28,101 WARNING DeepSeek error: HTTP Error 402: Payment Required — пропускаем фильтр
+2026-03-19 16:37:13,126 WARNING DeepSeek error: HTTP Error 402: Payment Required — пропускаем фильтр
+2026-03-19 16:37:55,846 WARNING DeepSeek error: HTTP Error 402: Payment Required — пропускаем фильтр
+2026-03-19 16:38:19,718 WARNING DeepSeek error: HTTP Error 402: Payment Required — пропускаем фильтр
+2026-03-19 16:39:12,025 WARNING DeepSeek error: HTTP Error 402: Payment Required — пропускаем фильтр
+2026-03-19 16:39:50,056 WARNING DeepSeek error: HTTP Error 402: Payment Required — пропускаем фильтр
+2026-03-19 16:40:56,628 WARNING DeepSeek error: HTTP Error 402: Payment Required — пропускаем фильтр
+2026-03-19 16:42:36,458 WARNING DeepSeek error: HTTP Error 402: Payment Required — пропускаем фильтр
+2026-03-19 16:44:03,418 WARNING DeepSeek error: HTTP Error 402: Payment Required — пропускаем фильтр
+2026-03-19 16:44:34,077 WARNING DeepSeek error: HTTP Error 402: Payment Required — пропускаем фильтр
+2026-03-19 16:46:18,499 WARNING DeepSeek error: HTTP Error 402: Payment Required — пропускаем фильтр
+2026-03-19 16:46:57,499 WARNING DeepSeek error: HTTP Error 402: Payment Required — пропускаем фильтр
+2026-03-19 16:49:29,392 WARNING DeepSeek error: HTTP Error 402: Payment Required — пропускаем фильтр
+2026-03-19 16:51:09,397 WARNING DeepSeek error: HTTP Error 402: Payment Required — пропускаем фильтр
+2026-03-19 16:51:49,558 WARNING DeepSeek error: HTTP Error 402: Payment Required — пропускаем фильтр
+2026-03-19 19:52:15,383 WARNING REST poll error: <urlopen error [WinError 10065] A socket operation was attempted to an unreachable host>
+2026-03-19 19:52:17,227 WARNING REST poll error: <urlopen error [Errno 11001] getaddrinfo failed>
+2026-03-19 19:52:19,275 WARNING REST poll error: <urlopen error [Errno 11001] getaddrinfo failed>
+2026-03-19 19:52:21,356 WARNING REST poll error: <urlopen error [Errno 11001] getaddrinfo failed>
+2026-03-19 19:52:23,200 WARNING REST poll error: <urlopen error [Errno 11001] getaddrinfo failed>
+2026-03-19 19:52:25,263 WARNING REST poll error: <urlopen error [Errno 11001] getaddrinfo failed>
+2026-03-19 19:52:27,327 WARNING REST poll error: <urlopen error [Errno 11001] getaddrinfo failed>
+2026-03-19 19:52:29,192 WARNING REST poll error: <urlopen error [Errno 11001] getaddrinfo failed>
+2026-03-19 19:52:31,250 WARNING REST poll error: <urlopen error [Errno 11001] getaddrinfo failed>
+2026-03-19 19:52:33,331 WARNING REST poll error: <urlopen error [Errno 11001] getaddrinfo failed>
+2026-03-19 19:52:35,369 WARNING REST poll error: <urlopen error [Errno 11001] getaddrinfo failed>
+2026-03-19 19:52:37,224 WARNING REST poll error: <urlopen error [Errno 11001] getaddrinfo failed>
+2026-03-19 19:52:39,272 WARNING REST poll error: <urlopen error [Errno 11001] getaddrinfo failed>
+2026-03-19 19:52:44,588 WARNING REST poll error: <urlopen error [Errno 11001] getaddrinfo failed>
+2026-03-19 19:52:46,640 WARNING REST poll error: <urlopen error [Errno 11001] getaddrinfo failed>
+2026-03-19 19:52:48,688 WARNING REST poll error: <urlopen error [Errno 11001] getaddrinfo failed>
+2026-03-19 20:37:23,322 WARNING REST poll error: <urlopen error [Errno 11001] getaddrinfo failed>
+2026-03-19 20:37:25,382 WARNING REST poll error: <urlopen error [Errno 11001] getaddrinfo failed>
+2026-03-19 20:37:27,457 WARNING REST poll error: <urlopen error [Errno 11001] getaddrinfo failed>
+2026-03-19 20:37:30,842 WARNING REST poll error: <urlopen error [Errno 11001] getaddrinfo failed>
+2026-03-19 20:37:31,458 WARNING REST poll error: <urlopen error [Errno 11001] getaddrinfo failed>
+2026-03-19 20:44:02,531 WARNING DeepSeek error: HTTP Error 402: Payment Required — пропускаем фильтр
+2026-03-19 20:46:23,100 WARNING DeepSeek error: HTTP Error 402: Payment Required — пропускаем фильтр
+2026-03-19 20:51:19,006 WARNING DeepSeek error: HTTP Error 402: Payment Required — пропускаем фильтр
+2026-03-19 21:00:32,558 WARNING DeepSeek error: HTTP Error 402: Payment Required — пропускаем фильтр
+2026-03-19 21:01:10,397 WARNING DeepSeek error: HTTP Error 402: Payment Required — пропускаем фильтр
+2026-03-19 21:01:54,713 WARNING DeepSeek error: HTTP Error 402: Payment Required — пропускаем фильтр
+2026-03-19 21:03:23,245 WARNING DeepSeek error: HTTP Error 402: Payment Required — пропускаем фильтр
+2026-03-19 21:03:59,525 WARNING DeepSeek error: HTTP Error 402: Payment Required — пропускаем фильтр
+2026-03-19 21:09:19,615 WARNING WS geo-blocked: Not Subscribed successfully! [spot@public.deals.v3.api@GOLD(XAUT)USDT,spot@public.depth.v3.api@GOLD(XAUT)USDT@20].  Reason： Blocked! 
+2026-03-19 21:11:33,343 WARNING DeepSeek error: HTTP Error 402: Payment Required — пропускаем фильтр

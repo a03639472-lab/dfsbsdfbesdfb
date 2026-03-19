@@ -1,0 +1,128 @@
+2026-03-19 09:18:51,142 DEBUG | Using proactor: IocpProactor
+2026-03-19 09:18:51,709 INFO | REST feed started
+2026-03-19 09:18:52,686 INFO | WS connecting to wss://wbs.mexc.com/ws
+2026-03-19 09:18:53,027 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:18:53,327 DEBUG | = connection is CONNECTING
+2026-03-19 09:18:53,410 DEBUG | > GET /ws HTTP/1.1
+2026-03-19 09:18:53,410 DEBUG | > Host: wbs.mexc.com
+2026-03-19 09:18:53,410 DEBUG | > Upgrade: websocket
+2026-03-19 09:18:53,410 DEBUG | > Connection: Upgrade
+2026-03-19 09:18:53,410 DEBUG | > Sec-WebSocket-Key: xantyLnd1YaFLhy9jBwk/g==
+2026-03-19 09:18:53,410 DEBUG | > Sec-WebSocket-Version: 13
+2026-03-19 09:18:53,411 DEBUG | > Sec-WebSocket-Extensions: permessage-deflate; client_max_window_bits
+2026-03-19 09:18:53,411 DEBUG | > User-Agent: Python/3.14 websockets/16.0
+2026-03-19 09:18:54,202 DEBUG | < HTTP/1.1 101 Switching Protocols
+2026-03-19 09:18:54,202 DEBUG | < Connection: upgrade
+2026-03-19 09:18:54,202 DEBUG | < Date: Thu, 19 Mar 2026 07:18:53 GMT
+2026-03-19 09:18:54,203 DEBUG | < Server: openresty
+2026-03-19 09:18:54,203 DEBUG | < upgrade: websocket
+2026-03-19 09:18:54,203 DEBUG | < sec-websocket-accept: 1vDBujn8oRkvkX5zAOYTxUBFmQs=
+2026-03-19 09:18:54,203 DEBUG | < Strict-Transport-Security: max-age=63072000; includeSubdomains; preload
+2026-03-19 09:18:54,204 DEBUG | < X-Cache: Miss from cloudfront
+2026-03-19 09:18:54,204 DEBUG | < Via: 1.1 d5bd9c82cbbad6f05501bb737b3688dc.cloudfront.net (CloudFront)
+2026-03-19 09:18:54,204 DEBUG | < X-Amz-Cf-Pop: WAW51-P3
+2026-03-19 09:18:54,204 DEBUG | < X-Amz-Cf-Id: BAhsQ3eTijK276tV_XAx_Z8eKWR_sM1jMTtWa0hTbgJMsYV_yQb-4w==
+2026-03-19 09:18:54,204 DEBUG | < Vary: Origin
+2026-03-19 09:18:54,205 DEBUG | = connection is OPEN
+2026-03-19 09:18:54,205 INFO | WS connected
+2026-03-19 09:18:54,206 DEBUG | > TEXT '{"method": "SUBSCRIPTION", "params": ["spot@pub...deals.v3.api@BTCUSDT"]}' [113 bytes]
+2026-03-19 09:18:54,207 INFO | WS subscribed: ['spot@public.depth.v3.api@BTCUSDT@20', 'spot@public.deals.v3.api@BTCUSDT']
+2026-03-19 09:18:54,488 DEBUG | < TEXT '{"id":0,"code":0,"msg":"Not Subscribed successf...].  Reason： Blocked! "}' [147 bytes]
+2026-03-19 09:18:55,153 DEBUG | WS msg: {"id": 0, "code": 0, "msg": "Not Subscribed successfully! [spot@public.depth.v3.api@BTCUSDT@20,spot@public.deals.v3.api@BTCUSDT].  Reason\uff1a Blocked! "}
+2026-03-19 09:18:55,154 INFO | WS sub response: {'id': 0, 'code': 0, 'msg': 'Not Subscribed successfully! [spot@public.depth.v3.api@BTCUSDT@20,spot@public.deals.v3.api@BTCUSDT].  Reason： Blocked! '}
+2026-03-19 09:18:55,153 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:18:56,609 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:18:58,009 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:18:59,424 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:19:00,782 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:19:02,152 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:19:03,511 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:19:04,937 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:19:06,308 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:19:07,670 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:19:09,036 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:19:10,423 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:19:11,793 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:19:13,184 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:19:14,214 DEBUG | > TEXT '{"method": "PING"}' [18 bytes]
+2026-03-19 09:19:14,500 DEBUG | < TEXT '{"id":0,"code":0,"msg":"PONG"}' [30 bytes]
+2026-03-19 09:19:14,500 DEBUG | WS msg: {"id": 0, "code": 0, "msg": "PONG"}
+2026-03-19 09:19:14,554 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:19:15,904 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:19:17,284 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:19:18,642 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:19:20,015 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:19:21,387 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:19:22,754 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:19:24,114 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:19:25,464 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:19:26,843 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:19:50,705 DEBUG | < CLOSE 1005 (no status received [internal]) [0 bytes]
+2026-03-19 09:19:50,705 DEBUG | > CLOSE 1005 (no status received [internal]) [0 bytes]
+2026-03-19 09:19:50,705 DEBUG | = connection is CLOSING
+2026-03-19 09:19:50,707 DEBUG | < EOF
+2026-03-19 09:19:50,707 DEBUG | > EOF
+2026-03-19 09:19:50,707 DEBUG | = connection is CLOSED
+2026-03-19 09:19:50,708 DEBUG | x closing TCP connection
+2026-03-19 09:19:50,709 INFO | WS connecting to wss://wbs.mexc.com/ws
+2026-03-19 09:19:50,839 DEBUG | = connection is CONNECTING
+2026-03-19 09:19:50,913 DEBUG | > GET /ws HTTP/1.1
+2026-03-19 09:19:50,913 DEBUG | > Host: wbs.mexc.com
+2026-03-19 09:19:50,914 DEBUG | > Upgrade: websocket
+2026-03-19 09:19:50,914 DEBUG | > Connection: Upgrade
+2026-03-19 09:19:50,914 DEBUG | > Sec-WebSocket-Key: +AYYDS5x82F+FitPe2HXZw==
+2026-03-19 09:19:50,914 DEBUG | > Sec-WebSocket-Version: 13
+2026-03-19 09:19:50,914 DEBUG | > Sec-WebSocket-Extensions: permessage-deflate; client_max_window_bits
+2026-03-19 09:19:50,914 DEBUG | > User-Agent: Python/3.14 websockets/16.0
+2026-03-19 09:19:51,697 DEBUG | < HTTP/1.1 101 Switching Protocols
+2026-03-19 09:19:51,697 DEBUG | < Connection: upgrade
+2026-03-19 09:19:51,697 DEBUG | < Date: Thu, 19 Mar 2026 07:19:50 GMT
+2026-03-19 09:19:51,698 DEBUG | < Server: openresty
+2026-03-19 09:19:51,698 DEBUG | < upgrade: websocket
+2026-03-19 09:19:51,698 DEBUG | < sec-websocket-accept: j/sIeQ9uu3BdoyjOT9aDtQNORoA=
+2026-03-19 09:19:51,699 DEBUG | < Strict-Transport-Security: max-age=63072000; includeSubdomains; preload
+2026-03-19 09:19:51,699 DEBUG | < X-Cache: Miss from cloudfront
+2026-03-19 09:19:51,699 DEBUG | < Via: 1.1 23e37613d9cc84a5cde72cb770c3f408.cloudfront.net (CloudFront)
+2026-03-19 09:19:51,699 DEBUG | < X-Amz-Cf-Pop: WAW51-P3
+2026-03-19 09:19:51,699 DEBUG | < X-Amz-Cf-Id: xyiOHWx-At7GDCMkQteNmjZFEqEi34ubF6K59M91GXMavSrLROeJ0w==
+2026-03-19 09:19:51,700 DEBUG | < Vary: Origin
+2026-03-19 09:19:51,700 DEBUG | = connection is OPEN
+2026-03-19 09:19:51,700 INFO | WS connected
+2026-03-19 09:19:51,701 DEBUG | > TEXT '{"method": "SUBSCRIPTION", "params": ["spot@pub...deals.v3.api@BTCUSDT"]}' [113 bytes]
+2026-03-19 09:19:51,702 INFO | WS subscribed: ['spot@public.depth.v3.api@BTCUSDT@20', 'spot@public.deals.v3.api@BTCUSDT']
+2026-03-19 09:19:52,020 DEBUG | < TEXT '{"id":0,"code":0,"msg":"Not Subscribed successf...].  Reason： Blocked! "}' [147 bytes]
+2026-03-19 09:19:52,020 DEBUG | WS msg: {"id": 0, "code": 0, "msg": "Not Subscribed successfully! [spot@public.depth.v3.api@BTCUSDT@20,spot@public.deals.v3.api@BTCUSDT].  Reason\uff1a Blocked! "}
+2026-03-19 09:19:52,020 INFO | WS sub response: {'id': 0, 'code': 0, 'msg': 'Not Subscribed successfully! [spot@public.depth.v3.api@BTCUSDT@20,spot@public.deals.v3.api@BTCUSDT].  Reason： Blocked! '}
+2026-03-19 09:19:52,090 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:19:53,441 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:19:54,814 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:19:56,258 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:19:57,617 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:19:59,005 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:20:00,401 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:20:01,779 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:20:03,465 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:20:04,845 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:20:06,229 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:20:07,612 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:20:08,972 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:20:10,342 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:20:11,708 DEBUG | > TEXT '{"method": "PING"}' [18 bytes]
+2026-03-19 09:20:12,241 DEBUG | < TEXT '{"id":0,"code":0,"msg":"PONG"}' [30 bytes]
+2026-03-19 09:20:12,241 DEBUG | WS msg: {"id": 0, "code": 0, "msg": "PONG"}
+2026-03-19 09:20:12,404 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:20:13,793 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:20:15,153 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:20:16,530 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:20:17,892 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:20:19,236 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:20:20,645 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:20:22,011 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:20:23,373 DEBUG | REST ok: 20 bids, 20 asks
+2026-03-19 09:20:23,602 DEBUG | > CLOSE 1000 (OK) [2 bytes]
+2026-03-19 09:20:23,603 DEBUG | = connection is CLOSING
+2026-03-19 09:20:23,750 DEBUG | < CLOSE 1005 (no status received [internal]) [0 bytes]
+2026-03-19 09:20:23,751 DEBUG | < EOF
+2026-03-19 09:20:23,752 DEBUG | > EOF
+2026-03-19 09:20:23,752 DEBUG | = connection is CLOSED
+2026-03-19 09:20:23,752 DEBUG | x closing TCP connection

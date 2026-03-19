@@ -1,0 +1,62 @@
+# CONFI Scalper v1.0 — Конфигурация
+# Переменные окружения задаются в .env файле
+
+bot:
+  symbol: BTCUSDT
+  confidence_threshold: 70
+  loop_interval_seconds: 1
+  dry_run: false
+
+mexc:
+  api_key: ${MEXC_API_KEY}
+  api_secret: ${MEXC_API_SECRET}
+  testnet: true
+  rest_url: "https://api.mexc.com"
+  ws_url: "wss://wbs-api.mexc.com/ws"
+  depth_limit: 20
+  recv_window: 5000
+  rate_limit_req_per_sec: 10
+  max_retry: 3
+  retry_delay_base: 1.0
+  ws_ping_interval: 20
+  ws_reconnect_max_age: 86400
+
+analyzer:
+  wall_threshold: 5.0        # Объём > avg * threshold → стена
+  melt_speed_threshold: 10.0 # Скорость таяния %/с для признания тающей
+  imbalance_levels: 10       # Уровней для расчёта дисбаланса
+  history_size: 10           # Размер истории объёмов уровня
+  min_wall_depth: 0.05       # Минимальная глубина стены от лучшей цены (%)
+  max_wall_depth: 2.0        # Максимальная глубина (%)
+  spread_max_pct: 0.1        # Максимальный допустимый спред (%)
+
+risk:
+  risk_per_trade_percent: 1.0    # Риск на сделку (% от баланса)
+  max_daily_loss_percent: 5.0    # Максимальный дневной убыток (%)
+  max_consecutive_losses: 3      # Максимум убытков подряд
+  stop_loss_percent: 2.0         # Стоп-лосс (% от цены входа)
+  take_profit_percent: 3.0       # Тейк-профит (% от цены входа)
+  max_open_positions: 1          # Максимум одновременных позиций
+  min_risk_reward: 1.5           # Минимальное соотношение RR
+  max_position_age_sec: 3600     # Принудительное закрытие через N секунд
+  trailing_stop_enabled: false   # Трейлинг-стоп
+  trailing_stop_pct: 1.0         # Расстояние трейлинг-стопа (%)
+  commission_rate: 0.001         # Комиссия биржи (0.1%)
+
+telegram:
+  enabled: true
+  bot_token: ${TELEGRAM_BOT_TOKEN}
+  chat_id: ${TELEGRAM_CHAT_ID}
+  notify_signals: true
+  notify_trades: true
+  notify_errors: true
+  daily_report_hour: 23  # UTC
+
+logging:
+  level: INFO
+  log_file: logs/bot.log
+  db_file: data/trades.db
+  rotation: "10 MB"
+  retention: "30 days"
+  log_to_console: true
+  json_logs: false
