@@ -178,7 +178,8 @@ class ClosedTrade:
 class LiveAnalyzer:
     """
     Анализирует реальный стакан MEXC.
-    Возвращает сигналы если есть.
+    Включает: Delta, Momentum, Anti-Flat, Anti-Spoofing,
+    Volume Spike, Market Direction, Signal Strength.
     """
 
     def __init__(
@@ -203,9 +204,8 @@ class LiveAnalyzer:
         self._ask_hist: Dict[float, Deque] = defaultdict(lambda: deque(maxlen=history_size))
         self._bid_ts:   Dict[float, float] = {}
         self._ask_ts:   Dict[float, float] = {}
-        self._lock: Optional[asyncio.Lock] = None  # инициализируется лениво внутри event loop
 
-        # Последний результат анализа
+        # Основные метрики стакана
         self.best_bid    = 0.0
         self.best_ask    = 0.0
         self.mid_price   = 0.0
@@ -219,6 +219,39 @@ class LiveAnalyzer:
         self.total_ask_vol = 0.0
         self.update_count  = 0
         self.last_update   = 0.0
+
+        # DELTA — разница buy/sell объёмов
+        self.delta_1s   = 0.0   # дельта за 1 сек
+        self.delta_3s   = 0.0   # дельта за 3 сек
+        self.delta_5s   = 0.0   # дельта за 5 сек
+        self.avg_delta  = 0.0   # средняя дельта
+        self._delta_history: Deque = deque(maxlen=30)
+        self._vol_history: Deque = deque(maxlen=30)  # история объёмов стакана
+
+        # MOMENTUM — скорость изменения цены
+        self.momentum_1s  = 0.0
+        self.momentum_3s  = 0.0
+        self.momentum_5s  = 0.0
+        self._price_ts_history: Deque = deque(maxlen=60)  # (timestamp, price)
+
+        # VOLUME SPIKE — всплеск объёма
+        self.volume_spike     = False
+        self.volume_spike_dir = ""  # "buy" или "sell"
+        self._avg_vol         = 0.0
+
+        # MARKET DIRECTION — направление рынка
+        self.market_direction = "flat"  # "up", "down", "flat"
+        self.market_strength  = 0.0    # 0-100
+
+        # ANTI-FLAT — флаг флэта
+        self.is_flat = True
+
+        # SIGNAL STRENGTH — итоговая сила сигнала
+        self.signal_score = 0.0  # 0-100
+
+        # ANTI-SPOOFING — обнаружение фейковых стен
+        self.spoofing_detected = False
+        self._wall_vol_history: Dict[float, Deque] = defaultdict(lambda: deque(maxlen=5))
         self._lock = None  # создаётся при первом вызове process() внутри event loop
 
     async def process(self, data: dict) -> bool:
@@ -289,9 +322,160 @@ class LiveAnalyzer:
         self.melting_bid = [w for w in self.bid_walls if w["melting"]]
         self.melting_ask = [w for w in self.ask_walls if w["melting"]]
 
+        # ── DELTA ──
+        delta_now = bid_vol - ask_vol
+        self._delta_history.append((now, delta_now))
+        self._calc_delta(now)
+
+        # ── MOMENTUM ──
+        self._price_ts_history.append((now, self.mid_price))
+        self._calc_momentum(now)
+
+        # ── VOLUME SPIKE ──
+        total_vol = bid_vol + ask_vol
+        self._vol_history.append(total_vol)
+        self._calc_volume_spike(total_vol, bid_vol, ask_vol)
+
+        # ── ANTI-FLAT ──
+        self._calc_anti_flat()
+
+        # ── MARKET DIRECTION ──
+        self._calc_market_direction()
+
+        # ── ANTI-SPOOFING ──
+        self._calc_anti_spoofing(sorted_bids[:k], sorted_asks[:k], now)
+
+        # ── SIGNAL SCORE ──
+        self._calc_signal_score()
+
         self.update_count += 1
         self.last_update = now
         return True
+
+    def _calc_delta(self, now: float):
+        """Рассчитать дельту за 1/3/5 секунд."""
+        vals_1s, vals_3s, vals_5s = [], [], []
+        for ts, d in self._delta_history:
+            age = now - ts
+            if age <= 1: vals_1s.append(d)
+            if age <= 3: vals_3s.append(d)
+            if age <= 5: vals_5s.append(d)
+        self.delta_1s = sum(vals_1s) / len(vals_1s) if vals_1s else 0.0
+        self.delta_3s = sum(vals_3s) / len(vals_3s) if vals_3s else 0.0
+        self.delta_5s = sum(vals_5s) / len(vals_5s) if vals_5s else 0.0
+        all_deltas = [d for _, d in self._delta_history]
+        self.avg_delta = sum(all_deltas) / len(all_deltas) if all_deltas else 0.0
+
+    def _calc_momentum(self, now: float):
+        """Рассчитать моментум за 1/3/5 секунд."""
+        if len(self._price_ts_history) < 2:
+            return
+        prices = list(self._price_ts_history)
+        cur_price = prices[-1][1]
+        def get_price_ago(secs):
+            for ts, p in reversed(prices):
+                if now - ts >= secs:
+                    return p
+            return prices[0][1]
+        p1 = get_price_ago(1)
+        p3 = get_price_ago(3)
+        p5 = get_price_ago(5)
+        self.momentum_1s = (cur_price - p1) / p1 * 100 if p1 > 0 else 0.0
+        self.momentum_3s = (cur_price - p3) / p3 * 100 if p3 > 0 else 0.0
+        self.momentum_5s = (cur_price - p5) / p5 * 100 if p5 > 0 else 0.0
+
+    def _calc_volume_spike(self, total_vol: float, bid_vol: float, ask_vol: float):
+        """Обнаружить всплеск объёма."""
+        if len(self._vol_history) < 5:
+            self.volume_spike = False
+            return
+        vols = list(self._vol_history)
+        self._avg_vol = sum(vols[:-1]) / (len(vols) - 1)
+        if self._avg_vol > 0 and total_vol > self._avg_vol * 2.0:
+            self.volume_spike = True
+            self.volume_spike_dir = "buy" if bid_vol > ask_vol else "sell"
+        else:
+            self.volume_spike = False
+            self.volume_spike_dir = ""
+
+    def _calc_anti_flat(self):
+        """Определить флэт по моментуму и спреду."""
+        mom_abs = abs(self.momentum_3s)
+        self.is_flat = mom_abs < 0.03 and self.spread_pct < 0.005
+
+    def _calc_market_direction(self):
+        """Определить направление рынка по истории цен."""
+        if len(self._price_ts_history) < 10:
+            self.market_direction = "flat"
+            self.market_strength = 0.0
+            return
+        prices = [p for _, p in self._price_ts_history]
+        first = prices[0]
+        last = prices[-1]
+        change_pct = (last - first) / first * 100 if first > 0 else 0
+        # Считаем сколько свечей вверх vs вниз
+        ups = sum(1 for i in range(1, len(prices)) if prices[i] > prices[i-1])
+        downs = len(prices) - 1 - ups
+        if change_pct > 0.03 and ups > downs * 1.5:
+            self.market_direction = "up"
+            self.market_strength = min(abs(change_pct) * 20, 100)
+        elif change_pct < -0.03 and downs > ups * 1.5:
+            self.market_direction = "down"
+            self.market_strength = min(abs(change_pct) * 20, 100)
+        else:
+            self.market_direction = "flat"
+            self.market_strength = 0.0
+
+    def _calc_anti_spoofing(self, bids: list, asks: list, now: float):
+        """Обнаружить спуфинг — стены которые быстро появляются и исчезают."""
+        self.spoofing_detected = False
+        # Проверяем bid стены
+        for price, vol in bids:
+            hist = self._wall_vol_history[price]
+            hist.append(vol)
+            if len(hist) >= 3:
+                # Если объём резко вырос и быстро упал — спуфинг
+                max_v = max(hist)
+                min_v = min(hist)
+                if max_v > 0 and min_v / max_v < 0.3:
+                    self.spoofing_detected = True
+                    return
+        # Проверяем ask стены
+        for price, vol in asks:
+            hist = self._wall_vol_history[price + 1000000]  # разделяем bid/ask ключи
+            hist.append(vol)
+            if len(hist) >= 3:
+                max_v = max(hist)
+                min_v = min(hist)
+                if max_v > 0 and min_v / max_v < 0.3:
+                    self.spoofing_detected = True
+                    return
+
+    def _calc_signal_score(self):
+        """Рассчитать итоговую силу сигнала 0-100."""
+        score = 0.0
+        # Дисбаланс стакана (0-25)
+        imb_score = min(abs(self.imbalance - 1) * 12, 25)
+        score += imb_score
+        # Моментум (0-25)
+        mom_score = min(abs(self.momentum_3s) * 250, 25)
+        score += mom_score
+        # Дельта (0-20)
+        if self.avg_delta != 0:
+            delta_ratio = abs(self.delta_3s / self.avg_delta) if self.avg_delta != 0 else 0
+            score += min(delta_ratio * 10, 20)
+        # Тающие стены (0-15)
+        if self.melting_ask or self.melting_bid:
+            score += 15
+        # Volume spike (0-10)
+        if self.volume_spike:
+            score += 10
+        # Штрафы
+        if self.is_flat:
+            score *= 0.3
+        if self.spoofing_detected:
+            score *= 0.5
+        self.signal_score = min(score, 100)
 
     def _detect_walls(
         self, levels: list, avg_vol: float, best_price: float, side: str, now: float
@@ -338,44 +522,86 @@ class LiveAnalyzer:
         tp_pct: float = 3.0,
     ) -> Optional[dict]:
         """
-        Сигналы по приоритету:
-        1. Тающая стена (лучший сигнал)
-        2. Дисбаланс + подтверждение направления (spread OK)
+        ФИНАЛЬНОЕ РЕШЕНИЕ — все фильтры применяются последовательно:
+        1. Anti-Flat блок
+        2. Anti-Spoofing блок
+        3. Спред фильтр
+        4. Momentum фильтр
+        5. Определение направления
+        6. Delta подтверждение
+        7. Volume spike бонус
+        8. Расчёт уверенности
         """
         price = self.mid_price
         if price <= 0:
             return None
 
-        # Фильтр: спред не должен быть слишком большим
+        # ── БЛОК 1: ANTI-FLAT ──
+        if self.is_flat:
+            return None
+
+        # ── БЛОК 2: СПРЕД ──
         if self.spread_pct > 0.05:
             return None
 
-        # ── Правило 1: тающая ask-стена → LONG
-        if self.melting_ask:
+        # ── БЛОК 3: ANTI-SPOOFING ──
+        if self.spoofing_detected:
+            return None
+
+        # ── БЛОК 4: ДУБЛИ — только если нет открытой позиции (проверяется снаружи) ──
+
+        # ── БЛОК 5: ТАЮЩИЕ СТЕНЫ (приоритет 1) ──
+        if self.melting_ask and self.momentum_3s > 0.02:
             wall = max(self.melting_ask, key=lambda w: w["melt_rate"])
-            conf = min(wall["melt_rate"] / 10.0 * 60 + max((self.imbalance - 1) * 10, 0), 100)
+            conf = min(wall["melt_rate"] / 10.0 * 50 + self.signal_score * 0.5, 100)
             if conf >= confidence_threshold:
                 return self._make_signal("LONG", "melting_ask_wall", conf, price, sl_pct, tp_pct, min_rr, wall)
 
-        # ── Правило 2: тающая bid-стена → SHORT
-        if self.melting_bid:
+        if self.melting_bid and self.momentum_3s < -0.02:
             wall = max(self.melting_bid, key=lambda w: w["melt_rate"])
-            conf = min(wall["melt_rate"] / 10.0 * 60 + max((1 / self.imbalance - 1) * 10, 0), 100)
+            conf = min(wall["melt_rate"] / 10.0 * 50 + self.signal_score * 0.5, 100)
             if conf >= confidence_threshold:
                 return self._make_signal("SHORT", "melting_bid_wall", conf, price, sl_pct, tp_pct, min_rr, wall)
 
-        # ── Правило 3: дисбаланс bid → LONG
-        # Требуем имбаланс И чтобы он держался (не разовый всплеск)
-        if self.imbalance >= imb_long_thr and not self.ask_walls:
-            conf = min((self.imbalance - imb_long_thr) * 12 + 60, 90)
-            if conf >= confidence_threshold:
-                return self._make_signal("LONG", "bid_imbalance", conf, price, sl_pct, tp_pct, min_rr)
+        # ── БЛОК 6: ДИСБАЛАНС + MOMENTUM + DELTA ──
+        # LONG: bid > ask, momentum вверх, delta положительная
+        if (self.imbalance >= imb_long_thr
+                and self.momentum_3s >= 0.03
+                and self.delta_3s > 0
+                and not self.ask_walls
+                and self.market_direction in ("up", "flat")):
+            base_conf = min((self.imbalance - imb_long_thr) * 12 + 55, 85)
+            # Бонусы
+            if self.volume_spike and self.volume_spike_dir == "buy":
+                base_conf = min(base_conf + 10, 95)
+            if self.momentum_3s > 0.05:
+                base_conf = min(base_conf + 5, 95)
+            if self.delta_3s > self.avg_delta * 1.5:
+                base_conf = min(base_conf + 5, 95)
+            if base_conf >= confidence_threshold:
+                reason = "bid_imbalance+momentum"
+                if self.volume_spike:
+                    reason += "+vol_spike"
+                return self._make_signal("LONG", reason, base_conf, price, sl_pct, tp_pct, min_rr)
 
-        # ── Правило 4: дисбаланс ask → SHORT
-        if self.imbalance <= imb_short_thr and not self.bid_walls:
-            conf = min((imb_short_thr - self.imbalance) / imb_short_thr * 25 + 60, 90)
-            if conf >= confidence_threshold:
-                return self._make_signal("SHORT", "ask_imbalance", conf, price, sl_pct, tp_pct, min_rr)
+        # SHORT: ask > bid, momentum вниз, delta отрицательная
+        if (self.imbalance <= imb_short_thr
+                and self.momentum_3s <= -0.03
+                and self.delta_3s < 0
+                and not self.bid_walls
+                and self.market_direction in ("down", "flat")):
+            base_conf = min((imb_short_thr - self.imbalance) / imb_short_thr * 25 + 55, 85)
+            if self.volume_spike and self.volume_spike_dir == "sell":
+                base_conf = min(base_conf + 10, 95)
+            if self.momentum_3s < -0.05:
+                base_conf = min(base_conf + 5, 95)
+            if self.delta_3s < self.avg_delta * -1.5:
+                base_conf = min(base_conf + 5, 95)
+            if base_conf >= confidence_threshold:
+                reason = "ask_imbalance+momentum"
+                if self.volume_spike:
+                    reason += "+vol_spike"
+                return self._make_signal("SHORT", reason, base_conf, price, sl_pct, tp_pct, min_rr)
 
         return None
 
@@ -463,19 +689,186 @@ class DemoEngine:
         self.start_time = time.time()
         self.ws_messages = 0
         self.running = False
-        self.ws_blocked = False      # True если WS geo-blocked → используем REST
-        self.rest_polls = 0          # счётчик REST-запросов стакана
+        self.ws_blocked = False
+        self.rest_polls = 0
 
         # Для дашборда: лог последних событий
         self.event_log: deque = deque(maxlen=8)
 
-        # Текущая цена (из сделок)
+        # Текущая цена
         self.last_trade_price = 0.0
-        self.price_history: deque = deque(maxlen=60)  # последние 60 цен
+        self.price_history: deque = deque(maxlen=60)
+
+        # ── RSI ──
+        self._rsi_prices: deque = deque(maxlen=15)
+        self.rsi = 50.0
+
+        # ── АВТО-ОПТИМИЗАЦИЯ ──
+        self._auto_opt_counter = 0
+        self._best_reason_stats: Dict[str, dict] = {}
+
+        # ── КОРРЕЛЯЦИЯ С BTC ──
+        self._btc_price = 0.0
+        self._btc_history: deque = deque(maxlen=30)
+        self._btc_direction = "flat"
+        self._last_btc_update = 0.0
+
+        # ── СТАТИСТИКА ПО ЧАСАМ ──
+        self._hourly_stats: Dict[int, dict] = {}
+        self._last_hourly_report = time.time()
+        self._last_weekly_report = time.time()
+
+        # ── ДНЕВНОЙ ЛИМИТ СДЕЛОК ──
+        self._daily_trade_count = 0
+        self._daily_trade_limit = 15
+        self._last_day = datetime.now().day
+
+        # ── ПАУЗА ПОСЛЕ СЕРИИ SL ──
+        self._sl_pause_until = 0.0
+
+        # ── RSI ──
+        self.rsi = 50.0
+        self._rsi_gains: deque = deque(maxlen=14)
+        self._rsi_losses: deque = deque(maxlen=14)
+        self._prev_price_for_rsi = 0.0
+
+        # ── АВТО-ОПТИМИЗАЦИЯ ──
+        self._auto_opt_counter = 0   # каждые 10 сделок пересчитываем
+        self._win_streak = 0
+        self._loss_streak = 0
+
+        # ── КОРРЕЛЯЦИЯ С BTC ──
+        self.btc_price = 0.0
+        self.btc_momentum = 0.0
+        self._btc_history: deque = deque(maxlen=30)
+        self._last_btc_fetch = 0.0
+
+        # ── СТАТИСТИКА ПО ПАТТЕРНАМ ──
+        self._pattern_stats: Dict[str, List[float]] = {}  # reason -> [pnl, ...]
+
+        # ── УРОВНИ ПОДДЕРЖКИ/СОПРОТИВЛЕНИЯ ──
+        self._support_levels: List[float] = []
+        self._resistance_levels: List[float] = []
+        self._sr_last_update = 0.0
+
+        # ── МУЛЬТИТАЙМФРЕЙМ ──
+        self._tf_1m: deque = deque(maxlen=60)   # цены последних 60 секунд
+        self._tf_5m: deque = deque(maxlen=60)   # цены каждые 5 сек (5 мин)
+        self._tf_15m: deque = deque(maxlen=60)  # цены каждые 15 сек (15 мин)
+        self._tf_last_1m = 0.0
+        self._tf_last_5m = 0.0
+        self._tf_last_15m = 0.0
+        self.tf_agreement = "none"  # "long", "short", "none"
+
+        # ── ДИНАМИЧЕСКИЙ РАЗМЕР ПОЗИЦИИ ──
+        self._base_risk_pct = risk_pct
+        self._streak_multiplier = 1.0  # увеличивается при победах
+
+        # ── ПАМЯТЬ СДЕЛОК МЕЖДУ СЕССИЯМИ ──
+        self._history_file = "logs/trade_history.json"
+        self._session_start_trades = 0
+
+        # ── ЕЖЕНЕДЕЛЬНЫЙ ОТЧЁТ ──
+        self._weekly_trades_start = len(self.closed_trades)
+        self._weekly_pnl_start = 0.0
 
     def _log_event(self, msg: str):
         ts = datetime.now().strftime("%H:%M:%S")
         self.event_log.append(f"{C.DIM}{ts}{C.RESET} {msg}")
+
+    def _update_rsi(self, price: float):
+        """Обновить RSI (14 периодов)."""
+        if self._prev_price_for_rsi == 0:
+            self._prev_price_for_rsi = price
+            return
+        change = price - self._prev_price_for_rsi
+        self._prev_price_for_rsi = price
+        if change > 0:
+            self._rsi_gains.append(change)
+            self._rsi_losses.append(0)
+        else:
+            self._rsi_gains.append(0)
+            self._rsi_losses.append(abs(change))
+        if len(self._rsi_gains) >= 14:
+            avg_gain = sum(self._rsi_gains) / 14
+            avg_loss = sum(self._rsi_losses) / 14
+            if avg_loss == 0:
+                self.rsi = 100.0
+            else:
+                rs = avg_gain / avg_loss
+                self.rsi = 100 - (100 / (1 + rs))
+
+    def _is_rsi_ok(self, direction: str) -> bool:
+        """RSI фильтр: не входить в перекупленность/перепроданность."""
+        if direction == "LONG" and self.rsi > 75:
+            return False  # перекуплен
+        if direction == "SHORT" and self.rsi < 25:
+            return False  # перепродан
+        return True
+
+    async def _fetch_btc_price(self):
+        """Получить цену BTC для корреляции."""
+        import urllib.request, json as _json
+        now = time.time()
+        if now - self._last_btc_fetch < 10:  # обновляем каждые 10 сек
+            return
+        self._last_btc_fetch = now
+        try:
+            url = f"{MEXC_REST_URL}/api/v3/ticker/price?symbol=BTCUSDT"
+            loop = asyncio.get_event_loop()
+            def fetch():
+                with urllib.request.urlopen(url, timeout=5) as r:
+                    return _json.loads(r.read())
+            data = await loop.run_in_executor(None, fetch)
+            new_price = float(data.get("price", 0))
+            if self.btc_price > 0 and new_price > 0:
+                self.btc_momentum = (new_price - self.btc_price) / self.btc_price * 100
+                self._btc_history.append(new_price)
+            self.btc_price = new_price
+        except Exception:
+            pass
+
+    def _is_btc_corr_ok(self, direction: str) -> bool:
+        """Проверить корреляцию с BTC (только если торгуем не BTC)."""
+        if "BTC" in self.symbol or self.btc_price == 0:
+            return True
+        # Если BTC падает сильно — не открывать LONG на золоте
+        if direction == "LONG" and self.btc_momentum < -0.3:
+            return False
+        # Если BTC растёт сильно — не открывать SHORT
+        if direction == "SHORT" and self.btc_momentum > 0.3:
+            return False
+        return True
+
+    def _auto_optimize(self):
+        """Авто-оптимизация SL/TP на основе последних результатов."""
+        if len(self.closed_trades) < 10:
+            return
+        recent = self.closed_trades[-10:]
+        wins = [t for t in recent if t.is_win]
+        losses = [t for t in recent if not t.is_win]
+        win_rate = len(wins) / len(recent)
+
+        # Если много проигрышей — ужесточаем вход
+        if win_rate < 0.35:
+            old_conf = self.confidence_thr
+            self.confidence_thr = min(self.confidence_thr + 5, 90)
+            if self.confidence_thr != old_conf:
+                self._log_event(clr(f"🔧 Авто-опт: confidence {old_conf:.0f}→{self.confidence_thr:.0f}%", C.YELLOW))
+
+        # Если много побед — можем чуть расслабить
+        elif win_rate > 0.65:
+            old_conf = self.confidence_thr
+            self.confidence_thr = max(self.confidence_thr - 2, 60)
+            if self.confidence_thr != old_conf:
+                self._log_event(clr(f"🔧 Авто-опт: confidence {old_conf:.0f}→{self.confidence_thr:.0f}%", C.GREEN))
+
+        # Статистика по паттернам
+        for trade in recent:
+            reason = trade.pos.reason
+            if reason not in self._pattern_stats:
+                self._pattern_stats[reason] = []
+            self._pattern_stats[reason].append(trade.net_pnl)
 
     # ──────────────────────────────────────────
     # WebSocket: реальные данные MEXC
@@ -656,33 +1049,102 @@ class DemoEngine:
 
     async def _on_book_update(self):
         """Реакция на обновление стакана."""
-        # Обновить позицию по mid-price стакана
+        price = self.analyzer.mid_price
+
+        # Обновить RSI
+        self._update_rsi(price)
+
+        # Обновить мультитаймфрейм
+        self._update_timeframes(price)
+
+        # Обновить уровни S/R
+        self._update_sr_levels()
+
+        # Обновить цену BTC для корреляции
+        await self._fetch_btc_price()
+
+        # Ежечасный отчёт
+        await self._send_hourly_report()
+
+        # Еженедельный отчёт
+        await self._send_weekly_report()
+
+        # Сохранить историю каждые 50 обновлений
+        if self.analyzer.update_count % 50 == 0:
+            self._save_history()
+
+        # Обновить позицию + тайм-аут
         if self.position:
-            await self._check_sl_tp(self.analyzer.mid_price)
+            await self._check_sl_tp(price)
+            await self._check_position_timeout()
 
         # Генерировать сигнал
         if self.position is None:
             if not self._can_trade():
                 return
+
+            # Пауза после 3 SL подряд
+            if self.consec_losses >= 3 and self._sl_pause_until == 0:
+                self._sl_pause_until = time.time() + 600  # 10 минут
+                self._log_event(clr("⏸️ Пауза 10 мин после 3 SL подряд", C.YELLOW))
+                await self._tg("⏸️ Пауза 10 минут после 3 SL подряд")
+                return
+            elif time.time() > self._sl_pause_until and self._sl_pause_until > 0:
+                self._sl_pause_until = 0.0
+                self.consec_losses = 0
+                self._log_event(clr("▶️ Пауза закончена, торговля возобновлена", C.GREEN))
+
             sig = self.analyzer.generate_signal(
                 confidence_threshold=self.confidence_thr,
                 sl_pct=self.sl_pct,
                 tp_pct=self.tp_pct,
             )
             if sig:
+                # RSI фильтр
+                if not self._is_rsi_ok(sig["direction"]):
+                    return
+                # BTC корреляция
+                if not self._is_btc_corr_ok(sig["direction"]):
+                    return
+                # Мультитаймфрейм
+                if not self._is_tf_ok(sig["direction"]):
+                    return
+                # Уровни S/R
+                if not self._is_sr_ok(sig["direction"], sig["entry"]):
+                    return
                 self.signals_generated += 1
                 self.last_signal = sig
                 await self._open_position(sig)
 
     async def _check_sl_tp(self, price: float):
-        """Проверить срабатывание SL/TP виртуальной позиции."""
+        """Проверить срабатывание SL/TP + трейлинг стоп."""
         if self.position is None:
             return
-        result = self.position.update_price(price)
+
+        # ── ТРЕЙЛИНГ СТОП ──
+        # Если позиция в плюсе больше 0.1% — подтягиваем SL
+        pos = self.position
+        if pos.direction == "LONG" and price > pos.entry_price:
+            profit_pct = (price - pos.entry_price) / pos.entry_price * 100
+            if profit_pct > 0.1:
+                # Новый SL = текущая цена - половина SL дистанции
+                sl_dist = pos.entry_price - pos.stop_loss
+                new_sl = price - sl_dist * 0.7
+                if new_sl > pos.stop_loss:
+                    pos.stop_loss = new_sl
+        elif pos.direction == "SHORT" and price < pos.entry_price:
+            profit_pct = (pos.entry_price - price) / pos.entry_price * 100
+            if profit_pct > 0.1:
+                sl_dist = pos.stop_loss - pos.entry_price
+                new_sl = price + sl_dist * 0.7
+                if new_sl < pos.stop_loss:
+                    pos.stop_loss = new_sl
+
+        result = pos.update_price(price)
         if result:
             exit_price = (
-                self.position.stop_loss   if result == "SL" else
-                self.position.take_profit if result == "TP" else price
+                pos.stop_loss   if result == "SL" else
+                pos.take_profit if result == "TP" else price
             )
             await self._close_position(result, exit_price)
 
@@ -698,10 +1160,14 @@ class DemoEngine:
             self._log_event(clr(f"🤖 DeepSeek отклонил {sig['direction']} @ {sig['entry']:.2f}", C.YELLOW))
             return
 
-        risk_amount = self.balance * self.risk_pct / 100
+        # Динамический размер позиции
+        dynamic_risk = self._get_dynamic_risk()
+        risk_amount = self.balance * dynamic_risk / 100
         quantity    = risk_amount / sig["entry"]
         if quantity <= 0:
             return
+
+        self._daily_trade_count += 1
 
         self.position = VirtualPosition(
             symbol      = self.symbol,
@@ -782,22 +1248,47 @@ SHORT — открывать только если ВСЕ условия:
 
 ФИНАЛЬНОЕ ПРАВИЛО: пропускай большинство сигналов, входи только в сильные импульсы."""
 
+        # История последних 5 сделок для обучения AI
+        trade_history = ""
+        if self.closed_trades:
+            trade_history = "\n--- ИСТОРИЯ ПОСЛЕДНИХ СДЕЛОК ---\n"
+            for t in self.closed_trades[-5:]:
+                result = "TP ✅" if t.is_win else "SL ❌"
+                trade_history += (
+                    f"{t.pos.direction} @ {t.pos.entry_price:.2f} → {result} "
+                    f"PnL: {t.net_pnl:+.4f} причина: {t.pos.reason}\n"
+                )
+
         user_data = (
             f"Символ: {self.symbol}\n"
             f"Предложенное направление: {sig['direction']}\n"
             f"Цена: {sig['entry']:.4f}\n"
             f"Причина стратегии: {sig['reason']}\n"
             f"Уверенность стратегии: {sig['confidence']:.0f}%\n"
+            f"Signal Score: {self.analyzer.signal_score:.1f}/100\n"
+            f"--- СТАКАН ---\n"
             f"Bid imbalance: {bid_imb_pct:.1f}%\n"
             f"Ask imbalance: {ask_imb_pct:.1f}%\n"
             f"Bid/Ask ratio: {self.analyzer.imbalance:.3f}\n"
-            f"Bid объём (топ-10): {self.analyzer.total_bid_vol:.4f}\n"
-            f"Ask объём (топ-10): {self.analyzer.total_ask_vol:.4f}\n"
             f"Спред: {self.analyzer.spread_pct:.4f}%\n"
             f"Тающих bid стен: {len(self.analyzer.melting_bid)}\n"
             f"Тающих ask стен: {len(self.analyzer.melting_ask)}\n"
-            f"Всего bid стен: {len(self.analyzer.bid_walls)}\n"
-            f"Всего ask стен: {len(self.analyzer.ask_walls)}\n"
+            f"--- DELTA ---\n"
+            f"Delta 1s: {self.analyzer.delta_1s:.4f}\n"
+            f"Delta 3s: {self.analyzer.delta_3s:.4f}\n"
+            f"Delta 5s: {self.analyzer.delta_5s:.4f}\n"
+            f"Avg delta: {self.analyzer.avg_delta:.4f}\n"
+            f"--- MOMENTUM ---\n"
+            f"Momentum 1s: {self.analyzer.momentum_1s:.4f}%\n"
+            f"Momentum 3s: {self.analyzer.momentum_3s:.4f}%\n"
+            f"Momentum 5s: {self.analyzer.momentum_5s:.4f}%\n"
+            f"--- РЫНОК ---\n"
+            f"Market direction: {self.analyzer.market_direction}\n"
+            f"Market strength: {self.analyzer.market_strength:.1f}\n"
+            f"Is flat: {self.analyzer.is_flat}\n"
+            f"Volume spike: {self.analyzer.volume_spike} ({self.analyzer.volume_spike_dir})\n"
+            f"Spoofing detected: {self.analyzer.spoofing_detected}\n"
+            f"{trade_history}"
             f"Стоит ли входить? Ответь JSON."
         )
 
@@ -853,11 +1344,113 @@ SHORT — открывать только если ВСЕ условия:
         chat_id = "5259105676"
         try:
             url = f"https://api.telegram.org/bot{token}/sendMessage"
-            data = urllib.parse.urlencode({"chat_id": chat_id, "text": text}).encode()
+            data = urllib.parse.urlencode({
+                "chat_id": chat_id,
+                "text": text,
+                "parse_mode": "HTML"
+            }).encode()
             req = urllib.request.Request(url, data=data)
             urllib.request.urlopen(req, timeout=5)
         except Exception as e:
             logging.warning(f"TG error: {e}")
+
+    async def _tg_poll_commands(self):
+        """Читать команды из Telegram и выполнять их."""
+        import urllib.request
+        import urllib.parse
+        import json as _j
+        token = "8391650748:AAF85_FqPdC3hoOXAGymCh5krfilRcSqd1s"
+        chat_id = "5259105676"
+
+        try:
+            # Получаем последние апдейты
+            offset = getattr(self, '_tg_offset', 0)
+            url = f"https://api.telegram.org/bot{token}/getUpdates?offset={offset}&timeout=1"
+            loop = asyncio.get_event_loop()
+            def fetch():
+                with urllib.request.urlopen(url, timeout=5) as r:
+                    return _j.loads(r.read())
+            data = await loop.run_in_executor(None, fetch)
+
+            for update in data.get("result", []):
+                self._tg_offset = update["update_id"] + 1
+                msg = update.get("message", {})
+                text = msg.get("text", "").strip().lower()
+                from_id = str(msg.get("chat", {}).get("id", ""))
+
+                # Только от нашего чата
+                if from_id != chat_id:
+                    continue
+
+                if text == "/status":
+                    n = len(self.closed_trades)
+                    wr = self.win_rate
+                    pnl = self.total_pnl
+                    sign = "+" if pnl >= 0 else ""
+                    pos_str = f"Позиция: {self.position.direction} @ {self.position.entry_price:.4f}" if self.position else "Позиция: нет"
+                    await self._tg(
+                        f"📊 <b>СТАТУС БОТА</b>\n"
+                        f"Символ: {self.symbol}\n"
+                        f"Баланс: {self.balance:.4f} USDT\n"
+                        f"PnL: {sign}{pnl:.4f} USDT\n"
+                        f"Сделок: {n} | WinRate: {wr:.1f}%\n"
+                        f"{pos_str}\n"
+                        f"RSI: {self.rsi:.1f}\n"
+                        f"BTC: {self._btc_direction}\n"
+                        f"Confidence: {self.confidence_thr:.0f}%\n"
+                        f"Дневных сделок: {self._daily_trade_count}/{self._daily_trade_limit}"
+                    )
+
+                elif text == "/balance":
+                    pnl = self.total_pnl
+                    sign = "+" if pnl >= 0 else ""
+                    await self._tg(
+                        f"💰 Баланс: <b>{self.balance:.4f} USDT</b>\n"
+                        f"Старт: {self.start_balance:.4f} USDT\n"
+                        f"PnL: {sign}{pnl:.4f} USDT ({pnl/self.start_balance*100:+.2f}%)"
+                    )
+
+                elif text == "/stop":
+                    await self._tg("⛔ Бот остановлен по команде /stop")
+                    self.running = False
+
+                elif text == "/pause":
+                    self._sl_pause_until = time.time() + 3600  # пауза 1 час
+                    await self._tg("⏸️ Торговля приостановлена на 1 час. /resume для возобновления")
+
+                elif text == "/resume":
+                    self._sl_pause_until = 0.0
+                    self.consec_losses = 0
+                    await self._tg("▶️ Торговля возобновлена!")
+
+                elif text == "/trades":
+                    if not self.closed_trades:
+                        await self._tg("Сделок пока нет")
+                    else:
+                        lines = ["📋 <b>Последние 5 сделок:</b>"]
+                        for t in self.closed_trades[-5:][::-1]:
+                            sign = "+" if t.net_pnl >= 0 else ""
+                            icon = "✅" if t.is_win else "❌"
+                            lines.append(
+                                f"{icon} {t.pos.direction} {t.pos.entry_price:.2f}→{t.exit_price:.2f} "
+                                f"{sign}{t.net_pnl:.4f} USDT"
+                            )
+                        await self._tg("\n".join(lines))
+
+                elif text == "/help":
+                    await self._tg(
+                        "🤖 <b>Команды бота:</b>\n"
+                        "/status — статус и статистика\n"
+                        "/balance — баланс и PnL\n"
+                        "/trades — последние 5 сделок\n"
+                        "/pause — пауза на 1 час\n"
+                        "/resume — возобновить торговлю\n"
+                        "/stop — остановить бота\n"
+                        "/help — эта справка"
+                    )
+
+        except Exception as e:
+            logging.debug(f"TG poll error: {e}")
 
     async def _close_position(self, reason: str, exit_price: float):
         """Закрыть виртуальную позицию."""
@@ -888,13 +1481,83 @@ SHORT — открывать только если ВСЕ условия:
             f"Символ: {self.symbol}\n"
             f"Вход: {trade.pos.entry_price:.4f} → Выход: {exit_price:.4f}\n"
             f"PnL: {sign}{trade.net_pnl:.4f} USDT ({sign}{trade.pnl_pct:.2f}%)\n"
+            f"RSI: {self.rsi:.1f} | Score: {self.analyzer.signal_score:.0f}\n"
             f"Длительность: {trade.duration:.0f}с\n"
             f"Баланс: {self.balance:.4f} USDT"
         )
         self.position = None
 
+        # Сохранить в CSV
+        self._save_trade_csv(trade)
+
+        # Статистика по часам
+        hour = datetime.now().hour
+        if hour not in self._hourly_stats:
+            self._hourly_stats[hour] = {"wins": 0, "losses": 0, "pnl": 0}
+        if trade.is_win:
+            self._hourly_stats[hour]["wins"] += 1
+        else:
+            self._hourly_stats[hour]["losses"] += 1
+        self._hourly_stats[hour]["pnl"] += trade.net_pnl
+
+        # Авто-оптимизация каждые 10 сделок
+        self._auto_opt_counter += 1
+        if self._auto_opt_counter % 10 == 0:
+            self._auto_optimize()
+
+    def _save_trade_csv(self, trade: "ClosedTrade"):
+        """Сохранить сделку в CSV файл."""
+        import csv
+        os.makedirs("logs", exist_ok=True)
+        fname = "logs/trades.csv"
+        file_exists = os.path.exists(fname)
+        try:
+            with open(fname, "a", newline="", encoding="utf-8") as f:
+                writer = csv.writer(f)
+                if not file_exists:
+                    writer.writerow(["time", "symbol", "direction", "entry", "exit",
+                                     "reason", "pnl", "pnl_pct", "duration", "result",
+                                     "rsi", "score", "btc_dir"])
+                writer.writerow([
+                    datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    self.symbol,
+                    trade.pos.direction,
+                    f"{trade.pos.entry_price:.4f}",
+                    f"{trade.exit_price:.4f}",
+                    trade.pos.reason,
+                    f"{trade.net_pnl:.4f}",
+                    f"{trade.pnl_pct:.2f}",
+                    f"{trade.duration:.0f}",
+                    "WIN" if trade.is_win else "LOSS",
+                    f"{self.rsi:.1f}",
+                    f"{self.analyzer.signal_score:.0f}",
+                    self._btc_direction,
+                ])
+        except Exception as e:
+            logging.warning(f"CSV save error: {e}")
+
     def _can_trade(self) -> bool:
-        """Проверить лимиты риска."""
+        """Проверить все лимиты риска."""
+        # Сбросить дневной счётчик при новом дне
+        today = datetime.now().day
+        if today != self._last_day:
+            self._daily_trade_count = 0
+            self.daily_pnl = 0.0
+            self._last_day = today
+
+        # Фильтр времени — не торговать ночью 01:00-06:00 UTC
+        utc_hour = datetime.utcnow().hour
+        if 1 <= utc_hour < 6:
+            return False
+
+        # Дневной лимит сделок
+        if self._daily_trade_count >= self._daily_trade_limit:
+            return False
+
+        # Пауза после серии SL
+        if time.time() < self._sl_pause_until:
+            return False
+
         if self.consec_losses >= self.max_consec:
             return False
         if self.start_balance > 0:
@@ -902,6 +1565,379 @@ SHORT — открывать только если ВСЕ условия:
             if loss_pct >= self.max_daily_loss:
                 return False
         return True
+
+    async def _check_position_timeout(self):
+        """Закрыть позицию если висит слишком долго без движения."""
+        if self.position is None:
+            return
+        pos = self.position
+        age = pos.age
+        # Если позиция висит >8 минут и PnL близко к 0 — закрываем
+        if age > 480:
+            pnl_pct = abs(pos.pnl_pct)
+            if pnl_pct < 0.05:
+                self._log_event(clr(f"⏰ Тайм-аут позиции ({age:.0f}с без движения)", C.YELLOW))
+                await self._close_position("TIMEOUT", self.analyzer.mid_price)
+
+    async def _send_hourly_report(self):
+        """Отправить ежечасный отчёт в Telegram."""
+        if time.time() - self._last_hourly_report < 3600:
+            return
+        self._last_hourly_report = time.time()
+
+        n = len(self.closed_trades)
+        wins = sum(1 for t in self.closed_trades if t.is_win)
+        wr = wins / n * 100 if n > 0 else 0
+        pnl = self.total_pnl
+
+        # Лучший час
+        best_hour = ""
+        if self._hourly_stats:
+            best = max(self._hourly_stats.items(), key=lambda x: x[1]["pnl"])
+            best_hour = f"\n⭐ Лучший час: {best[0]:02d}:00 (+{best[1]['pnl']:.4f})"
+
+        sign = "+" if pnl >= 0 else ""
+        await self._tg(
+            f"📊 ЕЖЕЧАСНЫЙ ОТЧЁТ\n"
+            f"Символ: {self.symbol}\n"
+            f"Сделок: {n} | WinRate: {wr:.1f}%\n"
+            f"PnL: {sign}{pnl:.4f} USDT\n"
+            f"Баланс: {self.balance:.4f} USDT\n"
+            f"Confidence: {self.confidence_thr:.0f}%\n"
+            f"Дневных сделок: {self._daily_trade_count}/{self._daily_trade_limit}"
+            f"{best_hour}"
+        )
+
+    def _get_best_hours(self) -> str:
+        """Получить топ-3 лучших часа для торговли."""
+        if not self._hourly_stats:
+            return "нет данных"
+        sorted_hours = sorted(self._hourly_stats.items(),
+                              key=lambda x: x[1]["pnl"], reverse=True)
+        return ", ".join(f"{h:02d}:00" for h, _ in sorted_hours[:3])
+
+    # ──────────────────────────────────────────
+    # УРОВНИ ПОДДЕРЖКИ / СОПРОТИВЛЕНИЯ
+    # ──────────────────────────────────────────
+
+    def _update_sr_levels(self):
+        """Рассчитать уровни поддержки и сопротивления из истории цен."""
+        if time.time() - self._sr_last_update < 30:
+            return
+        self._sr_last_update = time.time()
+        prices = list(self.price_history)
+        if len(prices) < 20:
+            return
+        # Находим локальные максимумы и минимумы
+        supports, resistances = [], []
+        for i in range(2, len(prices) - 2):
+            # Локальный минимум — поддержка
+            if prices[i] < prices[i-1] and prices[i] < prices[i-2] and \
+               prices[i] < prices[i+1] and prices[i] < prices[i+2]:
+                supports.append(prices[i])
+            # Локальный максимум — сопротивление
+            if prices[i] > prices[i-1] and prices[i] > prices[i-2] and \
+               prices[i] > prices[i+1] and prices[i] > prices[i+2]:
+                resistances.append(prices[i])
+        self._support_levels = sorted(set(round(p, 1) for p in supports))[-3:]
+        self._resistance_levels = sorted(set(round(p, 1) for p in resistances))[:3]
+
+    def _is_sr_ok(self, direction: str, price: float) -> bool:
+        """Проверить что не входим прямо в уровень."""
+        threshold = price * 0.001  # 0.1%
+        if direction == "LONG":
+            # Не входить если сразу выше сопротивление
+            for r in self._resistance_levels:
+                if abs(r - price) < threshold:
+                    self._log_event(clr(f"🚫 Сопротивление @ {r:.2f}", C.YELLOW))
+                    return False
+        elif direction == "SHORT":
+            # Не входить если сразу ниже поддержка
+            for s in self._support_levels:
+                if abs(s - price) < threshold:
+                    self._log_event(clr(f"🚫 Поддержка @ {s:.2f}", C.YELLOW))
+                    return False
+        return True
+
+    # ──────────────────────────────────────────
+    # МУЛЬТИТАЙМФРЕЙМ
+    # ──────────────────────────────────────────
+
+    def _update_timeframes(self, price: float):
+        """Обновить данные мультитаймфрейма."""
+        now = time.time()
+        if now - self._tf_last_1m >= 1:
+            self._tf_1m.append(price)
+            self._tf_last_1m = now
+        if now - self._tf_last_5m >= 5:
+            self._tf_5m.append(price)
+            self._tf_last_5m = now
+        if now - self._tf_last_15m >= 15:
+            self._tf_15m.append(price)
+            self._tf_last_15m = now
+        self._calc_tf_agreement()
+
+    def _calc_tf_agreement(self):
+        """Определить направление на всех таймфреймах."""
+        def trend(prices):
+            if len(prices) < 3:
+                return "flat"
+            p = list(prices)
+            change = (p[-1] - p[0]) / p[0] * 100 if p[0] > 0 else 0
+            if change > 0.03:
+                return "up"
+            elif change < -0.03:
+                return "down"
+            return "flat"
+
+        t1 = trend(self._tf_1m)
+        t5 = trend(self._tf_5m)
+        t15 = trend(self._tf_15m)
+
+        # Согласие когда хотя бы 2 из 3 согласны
+        votes_up = [t for t in [t1, t5, t15] if t == "up"]
+        votes_down = [t for t in [t1, t5, t15] if t == "down"]
+
+        if len(votes_up) >= 2:
+            self.tf_agreement = "long"
+        elif len(votes_down) >= 2:
+            self.tf_agreement = "short"
+        else:
+            self.tf_agreement = "none"
+
+    def _is_tf_ok(self, direction: str) -> bool:
+        """Проверить согласие таймфреймов."""
+        if self.tf_agreement == "none":
+            return True  # нет данных — не блокируем
+        if direction == "LONG" and self.tf_agreement == "short":
+            self._log_event(clr("🚫 MTF: таймфреймы против LONG", C.YELLOW))
+            return False
+        if direction == "SHORT" and self.tf_agreement == "long":
+            self._log_event(clr("🚫 MTF: таймфреймы против SHORT", C.YELLOW))
+            return False
+        return True
+
+    # ──────────────────────────────────────────
+    # ДИНАМИЧЕСКИЙ РАЗМЕР ПОЗИЦИИ
+    # ──────────────────────────────────────────
+
+    def _get_dynamic_risk(self) -> float:
+        """Рассчитать размер позиции динамически."""
+        base = self._base_risk_pct
+        # После 2+ побед подряд — увеличиваем на 20%
+        if self._win_streak >= 2:
+            multiplier = min(1.0 + self._win_streak * 0.1, 1.5)
+        # После 2+ убытков подряд — уменьшаем на 30%
+        elif self._loss_streak >= 2:
+            multiplier = max(1.0 - self._loss_streak * 0.15, 0.5)
+        else:
+            multiplier = 1.0
+        self._streak_multiplier = multiplier
+        return base * multiplier
+
+    # ──────────────────────────────────────────
+    # ПАМЯТЬ СДЕЛОК МЕЖДУ СЕССИЯМИ
+    # ──────────────────────────────────────────
+
+    def _save_history(self):
+        """Сохранить историю сделок в JSON."""
+        import json as _j
+        try:
+            os.makedirs("logs", exist_ok=True)
+            data = {
+                "balance": self.balance,
+                "total_trades": len(self.closed_trades),
+                "wins": sum(1 for t in self.closed_trades if t.is_win),
+                "total_pnl": self.total_pnl,
+                "hourly_stats": self._hourly_stats,
+                "confidence_thr": self.confidence_thr,
+                "sl_pct": self.sl_pct,
+                "tp_pct": self.tp_pct,
+                "saved_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            }
+            with open(self._history_file, "w") as f:
+                _j.dump(data, f, indent=2)
+        except Exception as e:
+            logging.warning(f"History save error: {e}")
+
+    def _load_history(self):
+        """Загрузить историю из прошлой сессии."""
+        import json as _j
+        try:
+            if not os.path.exists(self._history_file):
+                return
+            with open(self._history_file) as f:
+                data = _j.load(f)
+            # Восстанавливаем параметры
+            self._hourly_stats = {int(k): v for k, v in data.get("hourly_stats", {}).items()}
+            self.confidence_thr = data.get("confidence_thr", self.confidence_thr)
+            prev_trades = data.get("total_trades", 0)
+            prev_pnl = data.get("total_pnl", 0)
+            self._log_event(clr(f"📂 Загружена история: {prev_trades} сделок, PnL: {prev_pnl:+.4f}", C.CYAN))
+            logging.info(f"History loaded: {prev_trades} trades, pnl={prev_pnl}")
+        except Exception as e:
+            logging.warning(f"History load error: {e}")
+
+    # ──────────────────────────────────────────
+    # ЕЖЕНЕДЕЛЬНЫЙ ОТЧЁТ
+    # ──────────────────────────────────────────
+
+    async def _send_weekly_report(self):
+        """Отправить еженедельный отчёт каждое воскресенье."""
+        now = datetime.now()
+        if time.time() - self._last_weekly_report < 604800:  # раз в 7 дней
+            return
+        # Или если воскресенье 23:00
+        if not (now.weekday() == 6 and now.hour == 23):
+            return
+        self._last_weekly_report = time.time()
+
+        n = len(self.closed_trades)
+        wins = sum(1 for t in self.closed_trades if t.is_win)
+        wr = wins / n * 100 if n > 0 else 0
+        pnl = self.total_pnl
+        sign = "+" if pnl >= 0 else ""
+
+        # Лучший и худший день
+        best_h = self._get_best_hours()
+
+        await self._tg(
+            f"📅 ЕЖЕНЕДЕЛЬНЫЙ ОТЧЁТ\n"
+            f"{'='*25}\n"
+            f"Символ: {self.symbol}\n"
+            f"Всего сделок: {n}\n"
+            f"Победы: {wins} | Поражения: {n-wins}\n"
+            f"WinRate: {wr:.1f}%\n"
+            f"Итоговый PnL: {sign}{pnl:.4f} USDT\n"
+            f"Баланс: {self.balance:.4f} USDT\n"
+            f"⭐ Лучшие часы: {best_h}\n"
+            f"Confidence: {self.confidence_thr:.0f}%\n"
+            f"SL: {self.sl_pct:.2f}% | TP: {self.tp_pct:.2f}%"
+        )
+
+    def _update_rsi(self, price: float):
+        """Рассчитать RSI-14."""
+        self._rsi_prices.append(price)
+        if len(self._rsi_prices) < 2:
+            return
+        prices = list(self._rsi_prices)
+        gains, losses = [], []
+        for i in range(1, len(prices)):
+            diff = prices[i] - prices[i-1]
+            gains.append(max(diff, 0))
+            losses.append(max(-diff, 0))
+        if not gains:
+            return
+        avg_gain = sum(gains) / len(gains)
+        avg_loss = sum(losses) / len(losses)
+        if avg_loss == 0:
+            self.rsi = 100.0
+        else:
+            rs = avg_gain / avg_loss
+            self.rsi = 100 - (100 / (1 + rs))
+
+    def _is_rsi_ok(self, direction: str) -> bool:
+        """Проверить RSI фильтр."""
+        if direction == "LONG" and self.rsi > 75:
+            self._log_event(clr(f"🚫 RSI={self.rsi:.0f} — перекуплен, LONG заблокирован", C.YELLOW))
+            return False
+        if direction == "SHORT" and self.rsi < 25:
+            self._log_event(clr(f"🚫 RSI={self.rsi:.0f} — перепродан, SHORT заблокирован", C.YELLOW))
+            return False
+        return True
+
+    async def _fetch_btc_price(self):
+        """Получить цену BTC для корреляции (раз в 5 сек)."""
+        if time.time() - self._last_btc_update < 5:
+            return
+        if self.symbol == "BTCUSDT":
+            return  # не нужно если торгуем BTC
+        import urllib.request, json as _j
+        try:
+            loop = asyncio.get_event_loop()
+            def get_btc():
+                url = "https://api.mexc.com/api/v3/ticker/price?symbol=BTCUSDT"
+                with urllib.request.urlopen(url, timeout=3) as r:
+                    return _j.loads(r.read())
+            data = await loop.run_in_executor(None, get_btc)
+            btc_price = float(data.get("price", 0))
+            if btc_price > 0:
+                self._btc_price = btc_price
+                self._btc_history.append(btc_price)
+                self._last_btc_update = time.time()
+                # Определяем направление BTC
+                if len(self._btc_history) >= 3:
+                    prices = list(self._btc_history)
+                    change = (prices[-1] - prices[-3]) / prices[-3] * 100
+                    if change > 0.05:
+                        self._btc_direction = "up"
+                    elif change < -0.05:
+                        self._btc_direction = "down"
+                    else:
+                        self._btc_direction = "flat"
+        except Exception:
+            pass
+
+    def _is_btc_corr_ok(self, direction: str) -> bool:
+        """Проверить корреляцию с BTC."""
+        if self._btc_price == 0:
+            return True  # нет данных — не блокируем
+        if self._btc_direction == "down" and direction == "LONG":
+            self._log_event(clr(f"🚫 BTC↓ ({self._btc_price:.0f}) — LONG заблокирован", C.YELLOW))
+            return False
+        if self._btc_direction == "up" and direction == "SHORT":
+            self._log_event(clr(f"🚫 BTC↑ ({self._btc_price:.0f}) — SHORT заблокирован", C.YELLOW))
+            return False
+        return True
+
+    async def _update_btc_correlation(self):
+        """Обёртка для обновления BTC."""
+        await self._fetch_btc_price()
+
+    def _auto_optimize(self):
+        """Авто-оптимизация SL/TP на основе статистики."""
+        if len(self.closed_trades) < 10:
+            return
+
+        # Считаем статистику по причинам сигналов
+        stats: Dict[str, dict] = {}
+        for t in self.closed_trades[-20:]:
+            r = t.pos.reason
+            if r not in stats:
+                stats[r] = {"wins": 0, "losses": 0, "pnl": 0}
+            if t.is_win:
+                stats[r]["wins"] += 1
+            else:
+                stats[r]["losses"] += 1
+            stats[r]["pnl"] += t.net_pnl
+
+        self._best_reason_stats = stats
+
+        # Если много SL — увеличиваем уверенность
+        recent = self.closed_trades[-10:]
+        losses = sum(1 for t in recent if not t.is_win)
+        if losses >= 7:
+            old = self.confidence_thr
+            self.confidence_thr = min(self.confidence_thr + 5, 90)
+            if self.confidence_thr != old:
+                self._log_event(clr(f"⚙️ Авто-опт: confidence {old:.0f}% → {self.confidence_thr:.0f}%", C.CYAN))
+
+        # Если много TP — немного расслабляем
+        elif losses <= 2:
+            old = self.confidence_thr
+            self.confidence_thr = max(self.confidence_thr - 2, 60)
+            if self.confidence_thr != old:
+                self._log_event(clr(f"⚙️ Авто-опт: confidence {old:.0f}% → {self.confidence_thr:.0f}%", C.CYAN))
+
+        # Адаптируем SL/TP
+        avg_win = sum(t.net_pnl for t in recent if t.is_win) / max(1, sum(1 for t in recent if t.is_win))
+        avg_loss = abs(sum(t.net_pnl for t in recent if not t.is_win)) / max(1, losses)
+        if avg_loss > 0 and avg_win / avg_loss < 1.5:
+            # RR слишком маленький — увеличиваем TP
+            old_tp = self.tp_pct
+            self.tp_pct = min(self.tp_pct * 1.1, 1.0)
+            if abs(self.tp_pct - old_tp) > 0.01:
+                self._log_event(clr(f"⚙️ Авто-опт: TP {old_tp:.2f}% → {self.tp_pct:.2f}%", C.CYAN))
 
     # ──────────────────────────────────────────
     # Статистика
@@ -1007,6 +2043,12 @@ SHORT — открывать только если ВСЕ условия:
         pnl_str = f"{'+'if pnl_total>=0 else ''}{pnl_total:.4f} USDT  ({pnl_total/self.start_balance*100:+.2f}%)"
         print(f"│  💰 Баланс: {clr(bal_str, C.BOLD+C.WHITE)}   Старт: {self.start_balance:.2f} USDT{' '*(W-60)}│")
         print(f"│  📊 PnL:    {clr(pnl_str, C.BOLD+pnl_col)}{' '*(W-len(pnl_str)-14)}│")
+        # RSI и BTC корреляция
+        rsi_col = C.RED if self.rsi > 70 else (C.GREEN if self.rsi < 30 else C.WHITE)
+        btc_col = C.GREEN if self._btc_direction == "up" else (C.RED if self._btc_direction == "down" else C.DIM)
+        btc_str = f"BTC: {clr(f'{self._btc_price:.0f} ({self._btc_direction})', btc_col)}" if self._btc_price > 0 else ""
+        conf_str = f"Conf: {clr(f'{self.confidence_thr:.0f}%', C.CYAN)}"
+        print(f"│  RSI: {clr(f'{self.rsi:.1f}', rsi_col)}  {btc_str}  {conf_str}{' '*(W-60)}│")
         print(f"└{'─'*W}┘")
         print()
 
@@ -1023,6 +2065,34 @@ SHORT — открывать только если ВСЕ условия:
         data_src = f"REST polls: {self.rest_polls}" if self.ws_blocked else f"WS msgs: {self.ws_messages}"
         print(f"│  📈 {clr(self.symbol, C.BOLD)}  Mid: {clr(f'{mid_p:.4f}', C.BOLD+C.WHITE)}  Last: {last_p:.4f}  Spread: {spread:.3f}%  {data_src}{' '*(W-80)}│")
         print(f"│  Bid: {clr(f'{bid:.4f}', C.GREEN)}  Ask: {clr(f'{ask:.4f}', C.RED)}  Imbalance: {clr(f'{imb:.3f}', imb_col)}  {clr(chart, C.CYAN)}{' '*(W-len(chart)-60)}│")
+
+        # DELTA + MOMENTUM
+        mom = self.analyzer.momentum_3s
+        mom_col = C.GREEN if mom > 0.02 else (C.RED if mom < -0.02 else C.WHITE)
+        delta = self.analyzer.delta_3s
+        d_col = C.GREEN if delta > 0 else C.RED
+        mdir = self.analyzer.market_direction
+        mdir_col = C.GREEN if mdir == "up" else (C.RED if mdir == "down" else C.DIM)
+        score = self.analyzer.signal_score
+        score_col = C.GREEN if score > 60 else (C.YELLOW if score > 30 else C.DIM)
+        flat_str = clr("⚠️FLAT", C.YELLOW) if self.analyzer.is_flat else ""
+        spoof_str = clr("⚠️SPOOF", C.RED) if self.analyzer.spoofing_detected else ""
+        vol_str = clr(f"🔥VOL({self.analyzer.volume_spike_dir})", C.YELLOW) if self.analyzer.volume_spike else ""
+        print(f"│  Mom: {clr(f'{mom:+.4f}%', mom_col)}  Δ3s: {clr(f'{delta:+.4f}', d_col)}  Dir: {clr(mdir, mdir_col)}  Score: {clr(f'{score:.0f}', score_col)}  {flat_str}{spoof_str}{vol_str}{' '*(W-90)}│")
+
+        # RSI + BTC + лимиты
+        rsi = self.rsi
+        rsi_col = C.RED if rsi > 70 else (C.GREEN if rsi < 30 else C.WHITE)
+        rsi_str = clr(f"RSI:{rsi:.0f}", rsi_col)
+        btc_col = C.GREEN if self._btc_direction == "up" else (C.RED if self._btc_direction == "down" else C.DIM)
+        btc_str = clr(f"BTC:{self._btc_price:.0f}({self._btc_direction})", btc_col) if self._btc_price > 0 else ""
+        conf_str = clr(f"Conf:{self.confidence_thr:.0f}%", C.CYAN)
+        daily_str = clr(f"Сделок:{self._daily_trade_count}/{self._daily_trade_limit}", C.WHITE)
+        best_h = self._get_best_hours()
+        pause_str = clr(f"⏸️ пауза {int(self._sl_pause_until - time.time())}с", C.YELLOW) if time.time() < self._sl_pause_until else ""
+        print(f"│  {rsi_str}  {btc_str}  {conf_str}  {daily_str}  {pause_str}{' '*(W-80)}│")
+        if best_h != "нет данных":
+            print(f"│  ⭐ Лучшие часы: {clr(best_h, C.GREEN)}{' '*(W-30)}│")
 
         # Стены
         bw = len(self.analyzer.bid_walls)
@@ -1075,6 +2145,15 @@ SHORT — открывать только если ВСЕ условия:
         dd = self.max_drawdown
         pf_str = f"{pf:.2f}" if pf != float("inf") else "∞"
         print(f"│  Сделок: {clr(str(n), C.BOLD)}  ✅ {wins}  ❌ {losses}  WinRate: {clr(f'{wr:.1f}%', C.BOLD+pnl_color(wr-50))}{' '*(W-60)}│")
+        # MTF + динамический риск
+        tf_col = C.GREEN if self.tf_agreement == "long" else (C.RED if self.tf_agreement == "short" else C.DIM)
+        mult_col = C.GREEN if self._streak_multiplier > 1 else (C.RED if self._streak_multiplier < 1 else C.WHITE)
+        sr_str = ""
+        if self._support_levels:
+            sr_str += f"S:{self._support_levels[-1]:.1f} "
+        if self._resistance_levels:
+            sr_str += f"R:{self._resistance_levels[0]:.1f}"
+        print(f"│  MTF: {clr(self.tf_agreement, tf_col)}  Risk×{clr(f'{self._streak_multiplier:.1f}', mult_col)}  {sr_str}{' '*(W-50)}│")
         print(f"│  PF: {pf_str}  MaxDD: {dd:.4f} USDT  Серия убытков: {self.consec_losses}/{self.max_consec}  Сигналов: {self.signals_generated}{' '*(W-70)}│")
         print(f"│  Uptime: {h:02d}:{m:02d}:{s:02d}  Обновлений стакана: {self.analyzer.update_count}{' '*(W-50)}│")
         print(f"└{'─'*W}┘")
@@ -1114,6 +2193,9 @@ SHORT — открывать только если ВСЕ условия:
         self.running = True
         self.start_time = time.time()
 
+        # Загрузить историю прошлых сессий
+        self._load_history()
+
         print(f"\n{clr('CONFI Scalper — Демо-режим', C.BOLD+C.CYAN)}")
         print(f"Символ:  {clr(self.symbol, C.WHITE+C.BOLD)}")
         print(f"Баланс:  {clr(f'{self.balance:.2f} USDT', C.WHITE+C.BOLD)}")
@@ -1123,10 +2205,25 @@ SHORT — открывать только если ВСЕ условия:
         # Запуск WS в фоне
         ws_task = asyncio.create_task(self.connect_and_run())
 
-        # Дашборд-цикл
+        # Отправить приветствие в TG
+        await self._tg(
+            f"🤖 <b>Бот запущен!</b>\n"
+            f"Символ: {self.symbol}\n"
+            f"Баланс: {self.balance:.2f} USDT\n"
+            f"Команды: /help"
+        )
+
+        # Дашборд-цикл + TG команды
+        tg_poll_counter = 0
         try:
             while self.running:
                 self.render_dashboard()
+
+                # Проверять TG команды каждые 3 сек
+                tg_poll_counter += 1
+                if tg_poll_counter % 6 == 0:
+                    await self._tg_poll_commands()
+
                 await asyncio.sleep(0.5)
         except asyncio.CancelledError:
             pass
